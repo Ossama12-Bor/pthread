@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test de detection d'un deadlock lors d'un cycle de thread qui joignent tous le suivant.
  * main(th0) joine th1 qui joine th2 qui joine main.

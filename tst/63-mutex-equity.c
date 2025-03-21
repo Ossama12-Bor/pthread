@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/time.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test pour verifier que prendre un mutex ne desactive pas l'equité envers les autres threads.
  *

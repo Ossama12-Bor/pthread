@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <stdint.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test une chaine de thread avec un nombre decroissants de switch quand on descend dans la chaine.
  *

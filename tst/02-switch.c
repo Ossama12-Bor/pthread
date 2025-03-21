@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test de switchs.
  *

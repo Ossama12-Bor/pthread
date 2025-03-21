@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <sys/time.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test de faire une somme avec plein de thread sur un compteur partagé
  *

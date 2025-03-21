@@ -5,7 +5,7 @@
 #include <sys/time.h>
 #include <inttypes.h>
 #include <sys/time.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test de validation de la pré-emption (et par effet de bord de certaines implémentation de priorités)
  *

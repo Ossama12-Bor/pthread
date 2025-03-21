@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <stdint.h>
-#include "thread.h"
+#include "../src/thread.h"
 
 /* test de plein de switch pendant que N-1 threads sont bloqués dans join
  *
