@@ -1,15 +1,17 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -fPIC
+CFLAGS = -Wall -Wextra -g -fPIC -I$(INC_DIR)
 LDFLAGS = -shared
 INSTALL_DIR = install
 LIB_DIR = $(INSTALL_DIR)/lib
 BIN_DIR = $(INSTALL_DIR)/bin
+INC_DIR = src  # Header file location
 
 LIB_NAME = libthread
 LIB_SO = $(LIB_DIR)/$(LIB_NAME).so
 
 SRC = src/thread.c
 OBJ = $(SRC:.c=.o)
+DEPS = src/thread.h  # Header file dependency
 
 # List of tests
 TESTS = tst/01-main tst/02-switch tst/11-join tst/12-join-main tst/31-switch-many \
@@ -31,8 +33,8 @@ $(LIB_SO): $(OBJ)
 	@mkdir -p $(LIB_DIR)
 	$(CC) $(LDFLAGS) -o $@ $^
 
-# Compile source files into object files
-$(OBJ): src/thread.c
+# Compile source files into object files (recompile if thread.h changes)
+$(OBJ): $(SRC) $(DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile test executables and place them in $(BIN_DIR)
