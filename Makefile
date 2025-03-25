@@ -9,9 +9,9 @@ INC_DIR = src  # Header file location
 LIB_NAME = libthread
 LIB_SO = $(LIB_DIR)/$(LIB_NAME).so
 
-SRC = src/thread.c
+SRC = src/thread.c src/list_handler.c
 OBJ = $(SRC:.c=.o)
-DEPS = src/thread.h  # Header file dependency
+DEPS = src/thread.h  src/list_handler.h # Header file dependency
 
 # List of tests
 TESTS = tst/01-main tst/02-switch tst/11-join tst/12-join-main tst/31-switch-many \
@@ -31,10 +31,10 @@ all: $(LIB_SO) $(TEST_TARGETS)
 # Build shared library
 $(LIB_SO): $(OBJ)
 	@mkdir -p $(LIB_DIR)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 # Compile source files into object files (recompile if thread.h changes)
-$(OBJ): $(SRC) $(DEPS)
+src/%.o: src/%.c $(DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile test executables and place them in $(BIN_DIR)

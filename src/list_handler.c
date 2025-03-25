@@ -8,7 +8,7 @@ struct my_thread * first_available(struct my_queue * queue ){
 			break;
 		}
 	}
-	return var;
+	return var->state == IS_READY ? var : NULL;
 }
 
 void head2tail(struct my_queue * queue){

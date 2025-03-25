@@ -3,7 +3,6 @@
 #include <ucontext.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "list_handler.h"
 
 
 #ifndef USE_PTHREAD
@@ -17,7 +16,7 @@ struct my_queue  * queue = NULL;
 
 // Fonction pour mettre le main dans la queue
 
-int initialize_queue(struct my_queue * queue){
+int initialize_queue(){
 	queue = malloc(sizeof(*queue));
 	TAILQ_INIT(queue);
 	struct my_thread * main_thread = malloc(sizeof(struct my_thread));
@@ -95,12 +94,13 @@ int thread_yield(void) {
 			return EXIT_FAILURE;
 		}
 	}
+	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	if(current_thread->state == IS_FINISHED){
 		TAILQ_REMOVE(queue,current_thread,entries);
 		free(current_thread);
 		if(move_availale2head(queue)){
-			swapcontext(NULL,&TAILQ_FIRST(queue)->uc);
+			swapcontext(NULL,&(TAILQ_FIRST(queue)->uc));
 			return 0;
 		}
 			
@@ -121,8 +121,8 @@ int thread_yield(void) {
     
 }
 
-/*int thread_join(thread_t thread, void **retval) {
-    // Implémentation ici
+int thread_join(thread_t thread, void **retval) {
+	return 0;
 }
 
 void thread_exit(void *retval) {
@@ -131,18 +131,22 @@ void thread_exit(void *retval) {
 
 int thread_mutex_init(thread_mutex_t *mutex) {
     // Implémentation ici
+	return 0;
 }
 
 int thread_mutex_destroy(thread_mutex_t *mutex) {
     // Implémentation ici
+	return 0;
 }
 
 int thread_mutex_lock(thread_mutex_t *mutex) {
     // Implémentation ici
+	return 0;
 }
 
 int thread_mutex_unlock(thread_mutex_t *mutex) {
     // Implémentation ici
-}*/
+	return 0;
+}
 
 #endif /* USE_PTHREAD */
