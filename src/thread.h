@@ -2,7 +2,8 @@
 #define __THREAD_H__
 
 #ifndef USE_PTHREAD
-
+#include "queue.h"
+#include <ucontext.h>
 /* identifiant de thread
  * NB: pourra être un entier au lieu d'un pointeur si ca vous arrange,
  *     mais attention aux inconvénient des tableaux de threads
@@ -10,6 +11,21 @@
  */
 typedef void * thread_t;
 
+enum states{
+    IS_READY, IS_FINISHED, IS_ZOMBIE, IS_RUNNING, IS_BLOCKED, IS_WAITING  
+};
+
+
+
+
+struct my_thread {
+	thread_t id;
+    ucontext_t uc;
+    enum states state;
+    TAILQ_ENTRY(my_thread) entries;
+};
+
+TAILQ_HEAD(my_queue, my_thread);
 /* recuperer l'identifiant du thread courant.
  */
 extern thread_t thread_self(void);
