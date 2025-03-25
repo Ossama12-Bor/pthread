@@ -1,8 +1,14 @@
 #include "thread.h"
 #include "queue.h"
 #include <ucontext.h>
+#include <stdlib.h>
 
 #ifndef USE_PTHREAD
+
+
+enum states{
+    IS_READY, IS_FINISHED, IS_ZOMBIE, IS_RUNNING, IS_BLOCKED, IS_WAITING  
+};
 
 struct my_thread {
     thread_t id;
@@ -10,18 +16,14 @@ struct my_thread {
     enum states state;
 };
 
-enum states{
-    IS_READY, IS_FINISHED, IS_ZOMBIE, IS_RUNNING, IS_BLOCKED, IS_WAITING  
-};
 
 struct item {
     struct my_thread Mythread;
     TAILQ_ENTRY(item) entries;
-}
+};
 
 // Function initializer to initialize empty queue
 TAILQ_HEAD(my_queue, item) queue;
-TAILQ_INIT(&queue);
 
 // Fonction pour mettre le main dans la queue
 
@@ -71,7 +73,7 @@ thread_t thread_self(void) {
     if (TAILQ_EMPTY(&queue)) {
         return NULL;
     }
-    return TAILQ_FIRST(&queue)->Mythread->id;
+    return TAILQ_FIRST(&queue)->Mythread.id;
 }
 
 int thread_yield(void) {
