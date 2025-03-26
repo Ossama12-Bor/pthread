@@ -111,7 +111,7 @@ int thread_yield(void) {
 		ucontext_t uc = current_thread->uc;
 		head2tail(queue);
 		if(move_availale2head(queue)){
-			swapcontext(&uc,&TAILQ_FIRST(queue)->uc);
+			swapcontext(&current_thread->uc,&TAILQ_FIRST(queue)->uc);
 			return 0;
 		}
 			
