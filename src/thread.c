@@ -3,7 +3,7 @@
 #include <ucontext.h>
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <assert.h>
 
 #ifndef USE_PTHREAD
 
@@ -22,7 +22,7 @@ int initialize_queue(){
 	struct my_thread * main_thread = malloc(sizeof(struct my_thread));
 	main_thread->id = (thread_t)1;
 	getcontext(&main_thread->uc);
-	main_thread->state = IS_RUNNING;
+	main_thread->state = IS_READY;
 	TAILQ_INSERT_HEAD(queue,main_thread,entries);
 	return 0;
 
@@ -73,6 +73,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 
   
     *newthread = (thread_t)new_item;
+	new_item->id = *newthread;
 
     return 0;  // Success
 }
@@ -107,8 +108,8 @@ int thread_yield(void) {
 		return 1;
 	}
 	else {
-		current_thread->state = IS_READY;
-		ucontext_t uc = current_thread->uc;
+		if(current_thread->state == IS_BLOCKED)
+			current_thread->state = IS_READY;
 		head2tail(queue);
 		if(move_availale2head(queue)){
 			swapcontext(&current_thread->uc,&TAILQ_FIRST(queue)->uc);
@@ -122,11 +123,23 @@ int thread_yield(void) {
 }
 
 int thread_join(thread_t thread, void **retval) {
-	return 0;
+	int err;
+	struct my_thread * thr = find(queue,thread);
+	if(retval != NULL)
+		*retval = thr->retval;
+	thr->state = IS_FINISHED;
+	err = thread_yield();
+	assert(!err);
+	return err;
+
 }
 
 void thread_exit(void *retval) {
-    // Implémentation ici
+    struct my_thread * current_thread = TAILQ_FIRST(queue);
+	current_thread->state = IS_ZOMBIE;
+	current_thread->retval = retval;
+    assert(!thread_yield());
+
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {

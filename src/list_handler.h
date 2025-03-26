@@ -16,11 +16,14 @@ struct my_thread {
     ucontext_t uc;
     enum states state;
     TAILQ_ENTRY(my_thread) entries;
+    void * retval;
 };
 
 TAILQ_HEAD(my_queue, my_thread);
 
 void  head2tail(struct my_queue * queue);
+
+struct my_thread * find(struct my_queue * queue , thread_t id);
 
 
 struct my_thread *  first_available(struct my_queue * queue );
