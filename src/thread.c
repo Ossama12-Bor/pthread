@@ -99,6 +99,7 @@ int thread_yield(void) {
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	if(current_thread->state == IS_FINISHED){
 		TAILQ_REMOVE(queue,current_thread,entries);
+		free(current_thread->uc.uc_stack.ss_sp);
 		free(current_thread);
 		if(move_availale2head(queue)){
 			swapcontext(NULL,&(TAILQ_FIRST(queue)->uc));

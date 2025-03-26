@@ -25,6 +25,8 @@ void  head2tail(struct my_queue * queue);
 
 struct my_thread * find(struct my_queue * queue , thread_t id);
 
+int queue_size(struct my_queue * queue , thread_t id) ;
+
 
 struct my_thread *  first_available(struct my_queue * queue );
 

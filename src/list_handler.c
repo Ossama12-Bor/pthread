@@ -22,6 +22,16 @@ struct my_thread * find(struct my_queue * queue , thread_t id)
 	return var->id == id ? var : NULL;
 	
 };
+int queue_size(struct my_queue * queue , thread_t id) 
+{	
+	struct my_thread *var ;
+	int c=0;
+	TAILQ_FOREACH(var, queue, entries){
+		c++;
+		}
+	return c;
+	
+};
 void head2tail(struct my_queue * queue){
 	struct my_thread *var = TAILQ_FIRST(queue) ;
 	TAILQ_REMOVE(queue, var, entries);
