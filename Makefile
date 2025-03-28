@@ -22,8 +22,9 @@ TESTS = tst/01-main tst/02-switch tst/03-equity tst/11-join tst/12-join-main tst
 
 # Generate test targets in $(BIN_DIR)
 TEST_TARGETS = $(patsubst tst/%, $(BIN_DIR)/%, $(TESTS))
+TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
 
-.PHONY: all clean install
+.PHONY: all clean install pthread
 
 # Default target: compile the library and all tests
 all: $(LIB_SO) $(TEST_TARGETS)
@@ -37,15 +38,25 @@ $(LIB_SO): $(OBJ)
 src/%.o: src/%.c $(DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile test executables and place them in $(BIN_DIR)
+# Compile test executables and place them in $(BIN_DIR) with custom library
 $(BIN_DIR)/%: tst/%.c $(LIB_SO)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lthread -Wl,-rpath,$(LIB_DIR)
+
+# Compile test executables and place them in $(BIN_DIR) using pthread
+$(BIN_DIR)/p%: tst/%.c $(LIB_SO)
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lthread  -DUSE_PTHREAD -Wl,-rpath,$(LIB_DIR)
 
 # Install the library and executables
 install: all
 	@mkdir -p $(LIB_DIR) $(BIN_DIR)
 	cp $(LIB_SO) $(LIB_DIR)
+	cp $(TEST_TARGETS) $(BIN_DIR)
+
+# Install pthread executables
+pthread: $(TEST_TARGETS_PTHREAD)
+	@echo "Installed pthread test executables in $(BIN_DIR)."
 
 # Clean up build files
 clean:
