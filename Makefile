@@ -58,6 +58,17 @@ install: all
 pthread: $(TEST_TARGETS_PTHREAD)
 	@echo "Installed pthread test executables in $(BIN_DIR)."
 
+
+
+# Run a specific test with Valgrind
+valgrind/$(BIN_DIR)/%: $(BIN_DIR)/%
+	@echo "Running Valgrind on $<..."
+	@valgrind --leak-check=full --show-reachable=yes --track-origins=yes $<
+
+# Run all tests with Valgrind
+valgrind: $(patsubst $(BIN_DIR)/%, valgrind/$(BIN_DIR)/%,$(TEST_TARGETS))
+	@echo "All tests completed under Valgrind."
+
 # Clean up build files
 clean:
 	rm -rf $(OBJ) $(BIN_DIR) $(LIB_DIR)
