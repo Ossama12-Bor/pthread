@@ -22,7 +22,7 @@ struct my_thread * find(struct my_queue * queue , thread_t id)
 	return var->id == id ? var : NULL;
 	
 };
-int queue_size(struct my_queue * queue , thread_t id) 
+int queue_size(struct my_queue * queue) 
 {	
 	struct my_thread *var ;
 	int c=0;
@@ -47,4 +47,19 @@ int move_availale2head(struct my_queue * queue){
 	TAILQ_INSERT_HEAD(queue,var,entries);
 	return 1;
 
+}
+
+void queue_free(struct my_queue **queue){
+	if(queue!=NULL){
+	struct my_thread *var,*tmp ;
+
+	TAILQ_FOREACH_SAFE(var, *queue, entries,tmp){
+		if(var->id!=(thread_t)1)
+			free(var->uc.uc_stack.ss_sp);
+		free(var);
+		}
+	
+	free(*queue);
+	}
+	*queue = NULL;
 }

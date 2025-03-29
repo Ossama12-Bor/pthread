@@ -85,7 +85,11 @@ thread_t thread_self(void) {
 			return NULL;
 		}
 	}
-    return TAILQ_FIRST(queue)->id;
+    thread_t thr = TAILQ_FIRST(queue)->id;
+	if(queue_size(queue)==1){
+		queue_free(&queue);
+
+	}
 }
 
 int thread_yield(void) {
@@ -95,31 +99,21 @@ int thread_yield(void) {
 			return EXIT_FAILURE;
 		}
 	}
+
+	
 	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
-	if(current_thread->state == IS_FINISHED){
-		TAILQ_REMOVE(queue,current_thread,entries);
-		free(current_thread->uc.uc_stack.ss_sp);
-		free(current_thread);
-		if(move_availale2head(queue)){
-			swapcontext(NULL,&(TAILQ_FIRST(queue)->uc));
-			return 0;
-		}
-			
-		return 1;
-	}
-	else {
-		if(current_thread->state == IS_BLOCKED)
-			current_thread->state = IS_READY;
+
 		head2tail(queue);
 		if(move_availale2head(queue)){
 			swapcontext(&current_thread->uc,&TAILQ_FIRST(queue)->uc);
-			return 0;
 		}
-			
-		return 1;
+
+	if(queue_size(queue)==1){
+		queue_free(&queue);
 	}
-	
+
+	return 0;
     
 }
 
@@ -128,16 +122,23 @@ int thread_join(thread_t thread, void **retval) {
 	struct my_thread * thr = find(queue,thread);
 	if(retval != NULL)
 		*retval = thr->retval;
-	thr->state = IS_FINISHED;
-	err = thread_yield();
+	while(thr->state != IS_FINISHED){
+		err = thread_yield();
 	assert(!err);
+	}
+	if(thr->state ==IS_FINISHED){
+		TAILQ_REMOVE(queue,thr,entries);
+		free(thr->uc.uc_stack.ss_sp);
+		free(thr);
+		err = thread_yield();
+	}
 	return err;
 
 }
 
 void thread_exit(void *retval) {
     struct my_thread * current_thread = TAILQ_FIRST(queue);
-	current_thread->state = IS_ZOMBIE;
+	current_thread->state = IS_FINISHED;
 	current_thread->retval = retval;
     assert(!thread_yield());
 
