@@ -90,6 +90,7 @@ thread_t thread_self(void) {
 		queue_free(&queue);
 
 	}
+	return thr;
 }
 
 int thread_yield(void) {
@@ -104,11 +105,12 @@ int thread_yield(void) {
 	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
-		head2tail(queue);
-		if(move_availale2head(queue)){
-			swapcontext(&current_thread->uc,&TAILQ_FIRST(queue)->uc);
+	head2tail(queue);
+		if(!move_availale2head(queue)){
+			perror("move failed");
+			return EXIT_FAILURE;
 		}
-
+	swapcontext(&current_thread->uc,&TAILQ_FIRST(queue)->uc);
 	if(queue_size(queue)==1){
 		queue_free(&queue);
 	}
@@ -120,6 +122,7 @@ int thread_yield(void) {
 int thread_join(thread_t thread, void **retval) {
 	int err;
 	struct my_thread * thr = find(queue,thread);
+	assert(thr != NULL);
 	if(retval != NULL)
 		*retval = thr->retval;
 	while(thr->state != IS_FINISHED){

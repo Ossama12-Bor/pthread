@@ -19,7 +19,7 @@ struct my_thread * find(struct my_queue * queue , thread_t id)
 			break;
 		}
 	}
-	return var->id == id ? var : NULL;
+	return var ? (var->id == id ? var : NULL) : NULL;
 	
 };
 int queue_size(struct my_queue * queue) 
