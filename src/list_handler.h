@@ -15,7 +15,9 @@ enum states{
 struct my_thread {
 	thread_t id;
     ucontext_t uc;
+    ucontext_t if_no_exit;
     enum states state;
+    int valgrind_stackid;
     TAILQ_ENTRY(my_thread) entries;
     void * retval;
 };

@@ -1,32 +1,34 @@
 #include "list_handler.h"
 #include "queue.h"
+#include <valgrind/valgrind.h>
 
 struct my_thread * first_available(struct my_queue * queue ){
-	struct my_thread *var ;
-	TAILQ_FOREACH(var, queue, entries){
-		if (var->state == IS_READY){
-			break;
+	if(queue != NULL){
+		struct my_thread *var,*tmp ;
+		TAILQ_FOREACH_SAFE(var, queue, entries,tmp){
+			if (var->state == IS_READY){
+				return var;
+			}
 		}
 	}
-	return var->state == IS_READY ? var : NULL;
+	return  NULL;
 }
 
 struct my_thread * find(struct my_queue * queue , thread_t id) 
-{	
-	struct my_thread *var ;
-	TAILQ_FOREACH(var, queue, entries){
-		if (var->id == id){
-			break;
-		}
-	}
-	return var ? (var->id == id ? var : NULL) : NULL;
-	
-};
+{   
+    struct my_thread *var = NULL;
+    TAILQ_FOREACH(var, queue, entries){  
+        if (var->id == id){
+            return var;
+        }
+    }
+    return NULL;
+}
+
 int queue_size(struct my_queue * queue) 
-{	
-	struct my_thread *var ;
-	int c=0;
-	TAILQ_FOREACH(var, queue, entries){
+{	int c=0;
+	struct my_thread *var,*tmp ;
+	TAILQ_FOREACH_SAFE(var, queue, entries,tmp){
 		c++;
 		}
 	return c;
@@ -54,8 +56,11 @@ void queue_free(struct my_queue **queue){
 	struct my_thread *var,*tmp ;
 
 	TAILQ_FOREACH_SAFE(var, *queue, entries,tmp){
-		if(var->id!=(thread_t)1)
+		if(var->id!=(thread_t)1){
+			VALGRIND_STACK_DEREGISTER(var->valgrind_stackid);
 			free(var->uc.uc_stack.ss_sp);
+			free(var->if_no_exit.uc_stack.ss_sp);
+		}
 		free(var);
 		}
 	

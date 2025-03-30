@@ -4,11 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-
+#include <valgrind/valgrind.h>
 #ifndef USE_PTHREAD
 
-struct my_queue  * queue = NULL;
+#define MAIN_THRAD_ID (thread_t)1
+#define THREAD_STACK_SIZE 64*1024
 
+struct my_queue  * queue = NULL;
 
 
 // Function initializer to initialize empty queue
@@ -16,11 +18,24 @@ struct my_queue  * queue = NULL;
 
 // Fonction pour mettre le main dans la queue
 
+
+void no_exit(thread_t new_thread,void*retval){
+	struct my_thread * current_thread = find(queue,new_thread);
+	current_thread->state = IS_FINISHED;
+	current_thread->retval = retval;
+	if(queue_size(queue)>1)
+    	assert(!thread_yield());
+	else{
+		queue_free(queue);
+	}
+}
+
+
 int initialize_queue(){
 	queue = malloc(sizeof(*queue));
 	TAILQ_INIT(queue);
 	struct my_thread * main_thread = malloc(sizeof(struct my_thread));
-	main_thread->id = (thread_t)1;
+	main_thread->id = MAIN_THRAD_ID;
 	getcontext(&main_thread->uc);
 	main_thread->state = IS_READY;
 	TAILQ_INSERT_HEAD(queue,main_thread,entries);
@@ -33,13 +48,13 @@ int initialize_queue(){
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     // Allocate memory for the new thread
 	if(queue == NULL){
-		if(initialize_queue(queue)){
+		if(initialize_queue()){
 			perror("queue initializiation failed");
 			return EXIT_FAILURE;
 		}
 	}
 
-    struct my_thread *new_item = (struct my_thread *)malloc(sizeof(struct my_thread));
+    struct my_thread *new_item = (struct my_thread *)malloc(sizeof(*new_item));
     if (new_item == NULL) {
         perror("Failed to allocate memory for new thread");
         return -1;  // Return failure if memory allocation fails
@@ -56,10 +71,12 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     }
 
     
-    new_item->uc.uc_link = NULL;  
-    new_item->uc.uc_stack.ss_sp = malloc(64*1024);  
-    new_item->uc.uc_stack.ss_size = 64*1024;
-    new_item->uc.uc_stack.ss_flags = 0;    
+    new_item->uc.uc_link = &(new_item->if_no_exit);  
+    new_item->uc.uc_stack.ss_sp = malloc(THREAD_STACK_SIZE);
+    new_item->uc.uc_stack.ss_size = THREAD_STACK_SIZE;
+    new_item->uc.uc_stack.ss_flags = 0;
+	new_item->valgrind_stackid = VALGRIND_STACK_REGISTER(new_item->uc.uc_stack.ss_sp\
+					,new_item->uc.uc_stack.ss_sp + new_item->uc.uc_stack.ss_size);    
 	if (new_item->uc.uc_stack.ss_sp == NULL) {
         perror("Failed to allocate stack for new thread");
         free(new_item);  
@@ -75,12 +92,31 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     *newthread = (thread_t)new_item;
 	new_item->id = *newthread;
 
+	if (getcontext(&new_item->if_no_exit) == -1) {
+        perror("getcontext failed");
+        free(new_item);  
+        return -1;
+    }
+	new_item->if_no_exit.uc_link = NULL;  
+    new_item->if_no_exit.uc_stack.ss_sp = malloc(THREAD_STACK_SIZE);
+    new_item->if_no_exit.uc_stack.ss_size = THREAD_STACK_SIZE;
+    new_item->if_no_exit.uc_stack.ss_flags = 0;
+
+	if (new_item->if_no_exit.uc_stack.ss_sp == NULL) {
+        perror("Failed to allocate stack for new thread");
+        free(new_item);  
+        return -1;
+    }
+
+    makecontext(&new_item->if_no_exit, (void (*)(void)) no_exit, 2, *newthread,(void*) 0xbeefdead);
+
+
     return 0;  // Success
 }
 
 thread_t thread_self(void) {
 	if(queue == NULL){
-		if(initialize_queue(queue)){
+		if(initialize_queue()){
 			perror("queue initializiation failed");
 			return NULL;
 		}
@@ -95,12 +131,15 @@ thread_t thread_self(void) {
 
 int thread_yield(void) {
 	if(queue == NULL){
-		if(initialize_queue(queue)){
+		if(initialize_queue()){
 			perror("queue initializiation failed");
 			return EXIT_FAILURE;
 		}
 	}
-
+	if(queue_size(queue)==1 && TAILQ_FIRST(queue)->id==MAIN_THRAD_ID){
+		queue_free(&queue);
+		return 0;
+	}
 	
 	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
@@ -110,10 +149,9 @@ int thread_yield(void) {
 			perror("move failed");
 			return EXIT_FAILURE;
 		}
-	swapcontext(&current_thread->uc,&TAILQ_FIRST(queue)->uc);
-	if(queue_size(queue)==1){
-		queue_free(&queue);
-	}
+	struct my_thread * thread = TAILQ_FIRST(queue);
+	swapcontext(&(current_thread->uc),&(thread->uc));
+	
 
 	return 0;
     
@@ -123,18 +161,21 @@ int thread_join(thread_t thread, void **retval) {
 	int err;
 	struct my_thread * thr = find(queue,thread);
 	assert(thr != NULL);
-	if(retval != NULL)
-		*retval = thr->retval;
 	while(thr->state != IS_FINISHED){
 		err = thread_yield();
 	assert(!err);
 	}
-	if(thr->state ==IS_FINISHED){
-		TAILQ_REMOVE(queue,thr,entries);
+
+	if(retval != NULL)
+		*retval = thr->retval;
+	TAILQ_REMOVE(queue,thr,entries);
+	if(thread!= MAIN_THRAD_ID){
+		VALGRIND_STACK_DEREGISTER(thr->valgrind_stackid);
 		free(thr->uc.uc_stack.ss_sp);
-		free(thr);
-		err = thread_yield();
+		free(thr->if_no_exit.uc_stack.ss_sp);
 	}
+	free(thr);
+	err = thread_yield();
 	return err;
 
 }
