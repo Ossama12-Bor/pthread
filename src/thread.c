@@ -19,15 +19,14 @@ struct my_queue  * queue = NULL;
 // Fonction pour mettre le main dans la queue
 
 
-void no_exit(thread_t new_thread,void*retval){
-	struct my_thread * current_thread = find(queue,new_thread);
+void utils(void *(*func)(void*),void * funcarg){
+	struct my_thread * current_thread = TAILQ_FIRST(queue);
+	current_thread->retval = func(funcarg);
 	current_thread->state = IS_FINISHED;
-	current_thread->retval = retval;
-	if(queue_size(queue)>1)
-    	assert(!thread_yield());
-	else{
+	if(queue_size(queue)==1)
 		queue_free(queue);
-	}
+	else
+    	assert(!thread_yield());
 }
 
 
@@ -71,7 +70,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     }
 
     
-    new_item->uc.uc_link = &(new_item->if_no_exit);  
+    new_item->uc.uc_link = NULL;  
     new_item->uc.uc_stack.ss_sp = malloc(THREAD_STACK_SIZE);
     new_item->uc.uc_stack.ss_size = THREAD_STACK_SIZE;
     new_item->uc.uc_stack.ss_flags = 0;
@@ -83,7 +82,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
         return -1;
     }
 
-    makecontext(&new_item->uc, (void (*)(void))func, 1, funcarg);
+    makecontext(&new_item->uc, utils, 2, func , funcarg);
 
     
     TAILQ_INSERT_TAIL(queue, new_item, entries);
@@ -92,23 +91,6 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     *newthread = (thread_t)new_item;
 	new_item->id = *newthread;
 
-	if (getcontext(&new_item->if_no_exit) == -1) {
-        perror("getcontext failed");
-        free(new_item);  
-        return -1;
-    }
-	new_item->if_no_exit.uc_link = NULL;  
-    new_item->if_no_exit.uc_stack.ss_sp = malloc(THREAD_STACK_SIZE);
-    new_item->if_no_exit.uc_stack.ss_size = THREAD_STACK_SIZE;
-    new_item->if_no_exit.uc_stack.ss_flags = 0;
-
-	if (new_item->if_no_exit.uc_stack.ss_sp == NULL) {
-        perror("Failed to allocate stack for new thread");
-        free(new_item);  
-        return -1;
-    }
-
-    makecontext(&new_item->if_no_exit, (void (*)(void)) no_exit, 2, *newthread,(void*) 0xbeefdead);
 
 
     return 0;  // Success
@@ -172,7 +154,6 @@ int thread_join(thread_t thread, void **retval) {
 	if(thread!= MAIN_THRAD_ID){
 		VALGRIND_STACK_DEREGISTER(thr->valgrind_stackid);
 		free(thr->uc.uc_stack.ss_sp);
-		free(thr->if_no_exit.uc_stack.ss_sp);
 	}
 	free(thr);
 	err = thread_yield();

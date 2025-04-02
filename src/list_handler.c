@@ -59,7 +59,7 @@ void queue_free(struct my_queue **queue){
 		if(var->id!=(thread_t)1){
 			VALGRIND_STACK_DEREGISTER(var->valgrind_stackid);
 			free(var->uc.uc_stack.ss_sp);
-			free(var->if_no_exit.uc_stack.ss_sp);
+	
 		}
 		free(var);
 		}
