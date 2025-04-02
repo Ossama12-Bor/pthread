@@ -23,10 +23,16 @@ void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
 	current_thread->state = IS_FINISHED;
-	if(queue_size(queue)==1)
-		queue_free(queue);
-	else
-    	assert(!thread_yield());
+	if(queue_size(queue)!=1){
+		assert(!thread_yield());
+	}
+		
+	else{
+		stack_t stack = current_thread->uc.uc_stack;
+		free(queue);
+		free(current_thread);
+		free(stack.ss_sp);
+	}
 }
 
 
