@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <valgrind/valgrind.h>
+#include <errno.h>
 #ifndef USE_PTHREAD
 
 #define MAIN_THRAD_ID (thread_t)1
@@ -13,6 +14,8 @@
 struct my_queue  * queue = NULL;
 
 ucontext_t main_uc;
+
+
 // Function initializer to initialize empty queue
 
 
@@ -42,6 +45,7 @@ int initialize_queue(){
 	getcontext(&main_thread->uc);
 	getcontext(&main_uc);
 	main_thread->state = IS_READY;
+	main_thread->locker =0;
 	TAILQ_INSERT_HEAD(queue,main_thread,entries);
 	return 0;
 
@@ -66,6 +70,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 
     
     new_item->state = IS_READY;
+	new_item->locker =0;
 
     
     if (getcontext(&new_item->uc) == -1) {
@@ -149,9 +154,16 @@ int thread_join(thread_t thread, void **retval) {
 	struct my_thread * thr = find(queue,thread);
 	assert(thr != NULL);
 	while(thr->state != IS_FINISHED){
+		thr->locker = 1;
+		if(dead_lock(queue) == queue_size(queue)){
+			thr->locker = 0;
+			return EDEADLK;
+		}
+			
 		err = thread_yield();
 	assert(!err);
 	}
+	thr->locker = 0;
 
 	if(retval != NULL)
 		*retval = thr->retval;

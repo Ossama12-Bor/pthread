@@ -17,6 +17,7 @@ struct my_thread {
     ucontext_t uc;
     enum states state;
     int valgrind_stackid;
+    int locker;
     TAILQ_ENTRY(my_thread) entries;
     void * retval;
 };
@@ -35,4 +36,6 @@ struct my_thread *  first_available(struct my_queue * queue );
 int move_availale2head(struct my_queue * queue); // return 0 if no elem available 
 
 void queue_free(struct my_queue **queue);
+
+int dead_lock(struct my_queue *queue);
 #endif

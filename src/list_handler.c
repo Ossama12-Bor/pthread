@@ -68,3 +68,15 @@ void queue_free(struct my_queue **queue){
 	}
 	*queue = NULL;
 }
+
+int dead_lock(struct my_queue *queue)
+{	
+	int c = 0;
+	struct my_thread *var,*tmp ;
+	TAILQ_FOREACH_SAFE(var, queue, entries,tmp){
+		if(var->locker == 1)
+			c++;
+		}
+	return c;
+	
+};
