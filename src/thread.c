@@ -12,7 +12,7 @@
 
 struct my_queue  * queue = NULL;
 
-
+ucontext_t main_uc;
 // Function initializer to initialize empty queue
 
 
@@ -28,10 +28,8 @@ void utils(void *(*func)(void*),void * funcarg){
 	}
 		
 	else{
-		stack_t stack = current_thread->uc.uc_stack;
-		free(queue);
-		free(current_thread);
-		free(stack.ss_sp);
+		makecontext(&main_uc,queue_free,1,&queue);
+		setcontext(&main_uc);
 	}
 }
 
@@ -42,6 +40,7 @@ int initialize_queue(){
 	struct my_thread * main_thread = malloc(sizeof(struct my_thread));
 	main_thread->id = MAIN_THRAD_ID;
 	getcontext(&main_thread->uc);
+	getcontext(&main_uc);
 	main_thread->state = IS_READY;
 	TAILQ_INSERT_HEAD(queue,main_thread,entries);
 	return 0;
@@ -176,22 +175,26 @@ void thread_exit(void *retval) {
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {
-    // Implémentation ici
+	mutex->dummy = 1;
 	return 0;
 }
 
 int thread_mutex_destroy(thread_mutex_t *mutex) {
-    // Implémentation ici
+    mutex->dummy = -1;
 	return 0;
 }
 
 int thread_mutex_lock(thread_mutex_t *mutex) {
-    // Implémentation ici
+    while(mutex->dummy == 0){
+		thread_yield();
+	}
+	if(mutex->dummy == 1)
+		mutex->dummy =0;
 	return 0;
 }
 
 int thread_mutex_unlock(thread_mutex_t *mutex) {
-    // Implémentation ici
+    mutex->dummy = 1;
 	return 0;
 }
 
