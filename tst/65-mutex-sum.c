@@ -10,9 +10,8 @@ thread_mutex_t lock;
 int *tableau ;
 int size;
 int nb;
-static void * thfunc(void *dummy __attribute__((unused)))
+static void * thfunc(void *dummy)
 {
-    unsigned long i = 0;
     int pas = size/nb;
     int tmp = (__intptr_t)dummy;
     int s = 0;
@@ -20,10 +19,10 @@ static void * thfunc(void *dummy __attribute__((unused)))
         s+= tableau[pas*tmp +i];
     }
     if(tmp < (size -pas*nb)){
-        s+=tableau[pas*nb + i];
+        s+=tableau[pas*nb + tmp];
     }
 
-    return (void *)s;
+    return (void *)(__intptr_t) s;
 }
 
 int main(int argc, char *argv[])

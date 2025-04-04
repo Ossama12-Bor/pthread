@@ -12,7 +12,7 @@
 #define THREAD_STACK_SIZE 64*1024
 
 struct my_queue  * queue = NULL;
-int size ;
+int my_queue_size ;
 
 
 // Function initializer to initialize empty queue
@@ -25,11 +25,10 @@ void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
 	current_thread->state = IS_FINISHED;
-	if(size!=1){
+	if(my_queue_size!=1){
 		assert(!thread_yield());
 	}
 		
-	stack_t stack = current_thread->uc.uc_stack;
 	free(current_thread);
 	free(queue);
 }
@@ -44,7 +43,7 @@ int initialize_queue(){
 	main_thread->state = IS_READY;
 	main_thread->locker =0;
 	TAILQ_INSERT_HEAD(queue,main_thread,entries);
-	size = 1;
+	my_queue_size = 1;
 	return 0;
 
 
@@ -90,7 +89,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
         return -1;
     }
 
-    makecontext(&new_item->uc, utils, 2, func , funcarg);
+    makecontext(&new_item->uc, (void (*)(void))utils, 2, func , funcarg);
 
     
     TAILQ_INSERT_TAIL(queue, new_item, entries);
@@ -99,7 +98,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     *newthread = (thread_t)new_item;
 	new_item->id = *newthread;
 
-	size++;
+	my_queue_size++;
 
     return 0;  // Success
 }
@@ -112,7 +111,7 @@ thread_t thread_self(void) {
 		}
 	}
     thread_t thr = TAILQ_FIRST(queue)->id;
-	if(size==1){
+	if(my_queue_size==1){
 		queue_free(&queue);
 
 	}
@@ -126,7 +125,7 @@ int thread_yield(void) {
 			return EXIT_FAILURE;
 		}
 	}
-	if(size==1 && TAILQ_FIRST(queue)->id==MAIN_THRAD_ID){
+	if(my_queue_size==1 && TAILQ_FIRST(queue)->id==MAIN_THRAD_ID){
 		queue_free(&queue);
 		return 0;
 	}
@@ -134,7 +133,7 @@ int thread_yield(void) {
 	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
-	if (size!=1){
+	if (my_queue_size!=1){
 		head2tail(queue);
 			if(!move_availale2head(queue)){
 				perror("move failed");
@@ -156,7 +155,7 @@ int thread_join(thread_t thread, void **retval) {
 	assert(thr != NULL);
 	while(thr->state != IS_FINISHED){
 		thr->locker = 1;
-		if(dead_lock(queue) == size){
+		if(dead_lock(queue) == my_queue_size){
 			thr->locker = 0;
 			return EDEADLK;
 		}
@@ -169,7 +168,7 @@ int thread_join(thread_t thread, void **retval) {
 	if(retval != NULL)
 		*retval = thr->retval;
 	TAILQ_REMOVE(queue,thr,entries);
-	size--;
+	my_queue_size--;
 	if(thread!= MAIN_THRAD_ID){
 		VALGRIND_STACK_DEREGISTER(thr->valgrind_stackid);
 		free(thr->uc.uc_stack.ss_sp);
@@ -180,7 +179,7 @@ int thread_join(thread_t thread, void **retval) {
 
 }
 
-void thread_exit(void *retval) {
+void thread_exit(void *retval ) {
     struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->state = IS_FINISHED;
 	current_thread->retval = retval;
