@@ -18,7 +18,7 @@ TESTS = tst/01-main tst/02-switch tst/03-equity tst/11-join tst/12-join-main tst
         tst/61-mutex tst/71-preemption tst/21-create-many tst/32-switch-many-join \
         tst/62-mutex tst/81-deadlock tst/22-create-many-recursive \
         tst/33-switch-many-cascade tst/63-mutex-equity tst/23-create-many-once \
-        tst/51-fibonacci tst/64-mutex-join
+        tst/51-fibonacci tst/64-mutex-join tst/65-mutex-sum
 
 # Generate test targets in $(BIN_DIR)
 TEST_TARGETS = $(patsubst tst/%, $(BIN_DIR)/%, $(TESTS))
