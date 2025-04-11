@@ -181,6 +181,7 @@ int thread_join(thread_t thread, void **retval) {
 			thr->locker = 1;
 		}
 		if(deadlock == my_queue_size){
+			deadlock-=1;
 			return EDEADLK;
 		}
 		err = thread_yield();
