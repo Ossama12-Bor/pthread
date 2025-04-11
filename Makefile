@@ -52,7 +52,7 @@ $(BIN_DIR)/p%: tst/%.c $(LIB_SO)
 install: all
 	@mkdir -p $(LIB_DIR) $(BIN_DIR)
 	
-	cp $(TEST_TARGETS) $(BIN_DIR)
+	
 
 # Install pthread executables
 pthread: $(TEST_TARGETS_PTHREAD)
