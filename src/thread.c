@@ -178,6 +178,7 @@ int thread_join(thread_t thread, void **retval) {
 			thread_mutex_lock(&locker);
 			deadlock+=1;
 			thread_mutex_unlock(&locker);
+			thr->locker = 1;
 		}
 		if(deadlock == my_queue_size){
 			return EDEADLK;
@@ -186,6 +187,7 @@ int thread_join(thread_t thread, void **retval) {
 		assert(!err);
 	}
 	thr->locker = 0;
+	deadlock-=1;	
 
 	if(retval != NULL)
 		*retval = thr->retval;
