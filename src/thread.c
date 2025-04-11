@@ -14,8 +14,8 @@
 struct my_queue  * queue = NULL;
 int my_queue_size ;
 
-
-
+int deadlock;
+thread_mutex_t locker;
 
 // Function initializer to initialize empty queue
 
@@ -30,13 +30,11 @@ void utils(void *(*func)(void*),void * funcarg){
 	if(my_queue_size!=1){
 		assert(!thread_yield());
 	}
-		
-	free(current_thread);
-	free(queue);
 }
 
 
 int initialize_queue(){
+	assert(!thread_mutex_init(&locker));
 	queue = malloc(sizeof(*queue));
 	TAILQ_INIT(queue);
 	struct my_thread * main_thread = malloc(sizeof(struct my_thread));
@@ -60,7 +58,14 @@ void my_constructor() {
 
 __attribute__((destructor))
 void my_destructor() {
-    queue_free(&queue);
+	struct my_thread * current_thread = TAILQ_FIRST(queue);
+	if(current_thread != main_id_thread){
+		free(current_thread);
+		free(queue);
+	}
+    else 
+		queue_free(&queue);
+	assert(!thread_mutex_destroy(&locker));
 }
 
 
@@ -169,14 +174,16 @@ int thread_join(thread_t thread, void **retval) {
 	struct my_thread * thr = thread;
 	assert(thr != NULL);
 	while(thr->state != IS_FINISHED){
-		thr->locker = 1;
-		/*if(dead_lock(queue) == my_queue_size){
-			thr->locker = 0;
+		if(thr->locker == 0){
+			thread_mutex_lock(&locker);
+			deadlock+=1;
+			thread_mutex_unlock(&locker);
+		}
+		if(deadlock == my_queue_size){
 			return EDEADLK;
-		}*/
-			
+		}
 		err = thread_yield();
-	assert(!err);
+		assert(!err);
 	}
 	thr->locker = 0;
 
