@@ -2,6 +2,8 @@
 #include "queue.h"
 #include <valgrind/valgrind.h>
 
+thread_t main_id_thread;
+
 struct my_thread * first_available(struct my_queue * queue ){
 	if(queue != NULL){
 		struct my_thread *var,*tmp ;
@@ -14,7 +16,7 @@ struct my_thread * first_available(struct my_queue * queue ){
 	return  NULL;
 }
 
-struct my_thread * find(struct my_queue * queue , thread_t id) 
+/*struct my_thread * find(struct my_queue * queue , thread_t id) 
 {   
     struct my_thread *var = NULL;
     TAILQ_FOREACH(var, queue, entries){  
@@ -23,7 +25,7 @@ struct my_thread * find(struct my_queue * queue , thread_t id)
         }
     }
     return NULL;
-}
+}*/
 
 int queue_size(struct my_queue * queue) 
 {	int c=0;
@@ -56,7 +58,7 @@ void queue_free(struct my_queue **queue){
 	struct my_thread *var,*tmp ;
 
 	TAILQ_FOREACH_SAFE(var, *queue, entries,tmp){
-		if(var->id!=(thread_t)1){
+		if(var != main_id_thread){
 			VALGRIND_STACK_DEREGISTER(var->valgrind_stackid);
 			free(var->uc.uc_stack.ss_sp);
 	

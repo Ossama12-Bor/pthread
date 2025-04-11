@@ -4,7 +4,7 @@
 #include <ucontext.h>
 #include <stdlib.h>
 typedef void * thread_t;
-
+extern thread_t  main_id_thread;
 enum states{
     IS_READY, IS_FINISHED, IS_ZOMBIE, IS_RUNNING, IS_BLOCKED, IS_WAITING  
 };
@@ -13,7 +13,6 @@ enum states{
 
 
 struct my_thread {
-	thread_t id;
     ucontext_t uc;
     enum states state;
     int valgrind_stackid;
@@ -26,7 +25,6 @@ TAILQ_HEAD(my_queue, my_thread);
 
 void  head2tail(struct my_queue * queue);
 
-struct my_thread * find(struct my_queue * queue , thread_t id);
 
 struct my_thread *  first_available(struct my_queue * queue );
 
