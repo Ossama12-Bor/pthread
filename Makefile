@@ -51,7 +51,7 @@ $(BIN_DIR)/p%: tst/%.c $(LIB_SO)
 # Install the library and executables
 install: all
 	@mkdir -p $(LIB_DIR) $(BIN_DIR)
-	cp $(LIB_SO) $(LIB_DIR)
+	
 	cp $(TEST_TARGETS) $(BIN_DIR)
 
 # Install pthread executables
