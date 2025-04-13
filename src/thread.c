@@ -15,9 +15,9 @@
 
 struct my_queue  * queue = NULL;
 int my_queue_size ;
-//#ifdef PREEMPTION
+#ifdef PREEMPTION
 struct itimerval timer;
-//#endif
+#endif
 
 void timer_handler(int sig) {
 	(void) sig;
@@ -65,14 +65,14 @@ int initialize_queue(){
 	my_queue_size = 1;
 	main_id_thread = (thread_t)main_thread;
 	main_thread->wait = NULL;
-	//#ifdef PREEMPTION
+	#ifdef PREEMPTION
 	signal(SIGALRM, timer_handler);
     timer.it_value.tv_sec = 1;      
     timer.it_value.tv_usec = 0;     
     timer.it_interval.tv_sec = 1;   
     timer.it_interval.tv_usec = 0;  
     setitimer(ITIMER_REAL, &timer, NULL);
-	//#endif
+	#endif
 	return 0;
 
 
