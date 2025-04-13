@@ -14,8 +14,8 @@
 struct my_queue  * queue = NULL;
 int my_queue_size ;
 
-int deadlock;
-thread_mutex_t locker;
+//int deadlock;
+//thread_mutex_t locker;
 
 // Function initializer to initialize empty queue
 
@@ -26,7 +26,15 @@ thread_mutex_t locker;
 void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
+	struct my_thread * waiting = current_thread->wait;
 	current_thread->state = IS_FINISHED;
+	if(waiting  != NULL){
+		if(my_queue_size > 2){
+			TAILQ_REMOVE(queue,waiting ,entries);
+			TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
+		}
+		waiting->state = IS_READY;
+	}
 	if(my_queue_size!=1){
 		assert(!thread_yield());
 	}
@@ -34,17 +42,18 @@ void utils(void *(*func)(void*),void * funcarg){
 
 
 int initialize_queue(){
-	assert(!thread_mutex_init(&locker));
+	//assert(!thread_mutex_init(&locker));
 	queue = malloc(sizeof(*queue));
 	TAILQ_INIT(queue);
 	struct my_thread * main_thread = malloc(sizeof(struct my_thread));
 	//main_thread->id = MAIN_THRAD_ID;
 	getcontext(&main_thread->uc);
 	main_thread->state = IS_READY;
-	main_thread->locker =0;
+	//main_thread->locker =0;
 	TAILQ_INSERT_HEAD(queue,main_thread,entries);
 	my_queue_size = 1;
 	main_id_thread = (thread_t)main_thread;
+	main_thread->wait = NULL;
 	return 0;
 
 
@@ -65,7 +74,7 @@ void my_destructor() {
 	}
     else 
 		queue_free(&queue);
-	assert(!thread_mutex_destroy(&locker));
+	//assert(!thread_mutex_destroy(&locker));
 }
 
 
@@ -86,7 +95,6 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 
     
     new_item->state = IS_READY;
-	new_item->locker =0;
 
     
     if (getcontext(&new_item->uc) == -1) {
@@ -118,6 +126,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 	//new_item->id = *newthread;
 
 	my_queue_size++;
+	new_item->wait = NULL;
 
     return 0;  // Success
 }
@@ -153,17 +162,20 @@ int thread_yield(void) {
 	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
-	if (my_queue_size!=1){
+	if (my_queue_size > 1){
 		head2tail(queue);
 			if(!move_availale2head(queue)){
-				perror("move failed");
-				return EXIT_FAILURE;
+				struct my_thread * last = TAILQ_LAST(queue,my_queue);
+				TAILQ_REMOVE(queue,last,entries);
+				TAILQ_INSERT_HEAD(queue,last,entries);
+				return 1;
 			}
+		struct my_thread  * thread = TAILQ_FIRST(queue);
+		if(thread != current_thread)
+			swapcontext(&(current_thread->uc),&(thread->uc));
 	}
 
-	struct my_thread * thread = TAILQ_FIRST(queue);
-	swapcontext(&(current_thread->uc),&(thread->uc));
-	
+
 
 	return 0;
     
@@ -171,25 +183,29 @@ int thread_yield(void) {
 
 int thread_join(thread_t thread, void **retval) {
 	int err;
+	struct my_thread * current  = TAILQ_FIRST(queue);
 	struct my_thread * thr = thread;
 	assert(thr != NULL);
-	while(thr->state != IS_FINISHED){
-		if(thr->locker == 0){
-			thread_mutex_lock(&locker);
-			deadlock+=1;
-			thread_mutex_unlock(&locker);
-			thr->locker = 1;
-		}
-		if(deadlock == my_queue_size){
-			deadlock-=1;
-			return EDEADLK;
+	if(thr->wait == current){
+		return EDEADLK;
+	}
+	thr->wait = current;
+	current->state =IS_WAITING;
+	if(thr->state != IS_FINISHED){
+		if(my_queue_size > 2){
+			TAILQ_REMOVE(queue,thr,entries);
+			TAILQ_INSERT_AFTER(queue,current,thr,entries);
 		}
 		err = thread_yield();
-		assert(!err);
+		if(err == 1){
+			thr->wait = NULL;
+			current->state =IS_READY;
+			return EDEADLK;
+		}
+			
 	}
-	thr->locker = 0;
-	deadlock-=1;	
-
+	thr->wait = NULL;
+	
 	if(retval != NULL)
 		*retval = thr->retval;
 	TAILQ_REMOVE(queue,thr,entries);
@@ -199,15 +215,22 @@ int thread_join(thread_t thread, void **retval) {
 		free(thr->uc.uc_stack.ss_sp);
 	}
 	free(thr);
-	err = thread_yield();
-	return err;
+	return 0;
 
 }
 
 void thread_exit(void *retval ) {
     struct my_thread * current_thread = TAILQ_FIRST(queue);
+	struct my_thread * waiting = current_thread->wait;
 	current_thread->state = IS_FINISHED;
 	current_thread->retval = retval;
+	if(waiting  != NULL){
+		if(my_queue_size > 2){
+			TAILQ_REMOVE(queue,waiting ,entries);
+			TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
+		}
+		waiting->state = IS_READY;
+	}
     assert(!thread_yield());
     abort();
 }

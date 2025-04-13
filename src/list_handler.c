@@ -27,15 +27,6 @@ struct my_thread * first_available(struct my_queue * queue ){
     return NULL;
 }*/
 
-int queue_size(struct my_queue * queue) 
-{	int c=0;
-	struct my_thread *var,*tmp ;
-	TAILQ_FOREACH_SAFE(var, queue, entries,tmp){
-		c++;
-		}
-	return c;
-	
-};
 void head2tail(struct my_queue * queue){
 	struct my_thread *var = TAILQ_FIRST(queue) ;
 	TAILQ_REMOVE(queue, var, entries);
@@ -70,15 +61,3 @@ void queue_free(struct my_queue **queue){
 	}
 	*queue = NULL;
 }
-
-int dead_lock(struct my_queue *queue)
-{	
-	int c = 0;
-	struct my_thread *var,*tmp ;
-	TAILQ_FOREACH_SAFE(var, queue, entries,tmp){
-		if(var->locker == 1)
-			c++;
-		}
-	return c;
-	
-};

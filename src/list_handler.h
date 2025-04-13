@@ -16,7 +16,7 @@ struct my_thread {
     ucontext_t uc;
     enum states state;
     int valgrind_stackid;
-    int locker;
+    thread_t wait ;
     TAILQ_ENTRY(my_thread) entries;
     void * retval;
 };
@@ -26,11 +26,10 @@ TAILQ_HEAD(my_queue, my_thread);
 void  head2tail(struct my_queue * queue);
 
 
-struct my_thread *  first_available(struct my_queue * queue );
+
 
 int move_availale2head(struct my_queue * queue); // return 0 if no elem available 
 
 void queue_free(struct my_queue **queue);
 
-int dead_lock(struct my_queue *queue);
 #endif

@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
     gettimeofday(&tv2, NULL);
 
     free(th);
+    free(tableau);
     thread_mutex_destroy(&lock);
 
     us = (tv2.tv_sec-tv1.tv_sec)*1000000+(tv2.tv_usec-tv1.tv_usec);
