@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <sys/time.h>
 #include <valgrind/valgrind.h>
 #include <errno.h>
+#include <sys/signal.h>
 #ifndef USE_PTHREAD
 
 
@@ -13,6 +15,15 @@
 
 struct my_queue  * queue = NULL;
 int my_queue_size ;
+//#ifdef PREEMPTION
+struct itimerval timer;
+//#endif
+
+void timer_handler(int sig) {
+	(void) sig;
+	assert(!thread_yield());
+}
+
 
 //int deadlock;
 //thread_mutex_t locker;
@@ -54,6 +65,14 @@ int initialize_queue(){
 	my_queue_size = 1;
 	main_id_thread = (thread_t)main_thread;
 	main_thread->wait = NULL;
+	//#ifdef PREEMPTION
+	signal(SIGALRM, timer_handler);
+    timer.it_value.tv_sec = 1;      
+    timer.it_value.tv_usec = 0;     
+    timer.it_interval.tv_sec = 1;   
+    timer.it_interval.tv_usec = 0;  
+    setitimer(ITIMER_REAL, &timer, NULL);
+	//#endif
 	return 0;
 
 
