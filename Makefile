@@ -15,7 +15,7 @@ DEPS = src/thread.h  src/list_handler.h # Header file dependency
 
 # List of tests
 TESTS = tst/01-main tst/02-switch tst/03-equity tst/11-join tst/12-join-main tst/31-switch-many \
-        tst/61-mutex tst/71-preemption tst/21-create-many tst/32-switch-many-join \
+        tst/61-mutex tst/21-create-many tst/32-switch-many-join \
         tst/62-mutex tst/81-deadlock tst/22-create-many-recursive \
         tst/33-switch-many-cascade tst/63-mutex-equity tst/23-create-many-once \
         tst/51-fibonacci tst/64-mutex-join tst/65-mutex-sum
@@ -27,9 +27,10 @@ TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
 .PHONY: all clean install pthread
 
 # Default target: compile the library and all tests
-all: $(LIB_SO) $(TEST_TARGETS)
+all: $(LIB_SO) $(filter-out $(BIN_DIR)/71-preemption, $(TEST_TARGETS)) $(BIN_DIR)/71-preemption
 
 # Build shared library
+$(LIB_SO): CFLAGS += -DPREEMPTION
 $(LIB_SO): $(OBJ)
 	@mkdir -p $(LIB_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
@@ -42,6 +43,10 @@ src/%.o: src/%.c $(DEPS)
 $(BIN_DIR)/%: tst/%.c $(LIB_SO)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lthread -Wl,-rpath,$(LIB_DIR)
+
+$(BIN_DIR)/71-preemption: tst/71-preemption.c $(LIB_SO)
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread -Wl,-rpath,$(LIB_DIR)
 
 # Compile test executables and place them in $(BIN_DIR) using pthread
 $(BIN_DIR)/p%: tst/%.c $(LIB_SO)

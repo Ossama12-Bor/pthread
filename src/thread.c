@@ -67,10 +67,10 @@ int initialize_queue(){
 	main_thread->wait = NULL;
 	#ifdef PREEMPTION
 	signal(SIGALRM, timer_handler);
-    timer.it_value.tv_sec = 1;      
-    timer.it_value.tv_usec = 0;     
-    timer.it_interval.tv_sec = 1;   
-    timer.it_interval.tv_usec = 0;  
+    timer.it_value.tv_sec = 0;      
+    timer.it_value.tv_usec = 10;     
+    timer.it_interval.tv_sec = 0;   
+    timer.it_interval.tv_usec = 100;  
     setitimer(ITIMER_REAL, &timer, NULL);
 	#endif
 	return 0;
