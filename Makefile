@@ -11,6 +11,7 @@ LIB_SO = $(LIB_DIR)/$(LIB_NAME).so
 
 SRC = src/thread.c src/list_handler.c
 OBJ = $(SRC:.c=.o)
+OBJ_PREEMPT = src/thread_preempt.o src/list_handler.o
 DEPS = src/thread.h  src/list_handler.h # Header file dependency
 
 # List of tests
@@ -27,7 +28,7 @@ TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
 .PHONY: all clean install pthread
 
 # Default target: compile the library and all tests
-all: $(LIB_SO) $(filter-out $(BIN_DIR)/71-preemption, $(TEST_TARGETS)) $(BIN_DIR)/71-preemption
+all: $(LIB_SO) $(TEST_TARGETS) $(BIN_DIR)/71-preemption
 
 # Build shared library
 $(LIB_SO): $(OBJ)
@@ -43,17 +44,22 @@ $(BIN_DIR)/%: tst/%.c $(LIB_SO)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lthread -Wl,-rpath,$(LIB_DIR)
 
-$(BIN_DIR)/71-preemption: tst/71-preemption.c $(LIB_SO)
-	@mkdir -p $(BIN_DIR)
-	gcc -Wall -Wextra -g -fPIC -Isrc   -DPREEMPTION -c src/thread.c -o src/thread.o
-	gcc -Wall -Wextra -g -fPIC -Isrc   -DPREEMPTION -shared -o install/lib/libthread.so src/thread.o src/list_handler.o
-	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread -Wl,-rpath,$(LIB_DIR)
-
-
 # Compile test executables and place them in $(BIN_DIR) using pthread
 $(BIN_DIR)/p%: tst/%.c $(LIB_SO)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $< -L$(LIB_DIR) -lthread  -DUSE_PTHREAD -Wl,-rpath,$(LIB_DIR)
+
+src/thread_preempt.o: src/thread.c $(DEPS)
+	$(CC) $(CFLAGS) -DPREEMPTION -c $< -o $@
+
+$(LIB_DIR)/libthread_preempt.so: $(OBJ_PREEMPT)
+	@mkdir -p $(LIB_DIR)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+$(BIN_DIR)/71-preemption: tst/71-preemption.c $(LIB_DIR)/libthread_preempt.so
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread_preempt -Wl,-rpath,$(LIB_DIR)
+
 
 # Install the library and executables
 install: all
