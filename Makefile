@@ -30,7 +30,6 @@ TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
 all: $(LIB_SO) $(filter-out $(BIN_DIR)/71-preemption, $(TEST_TARGETS)) $(BIN_DIR)/71-preemption
 
 # Build shared library
-$(LIB_SO): CFLAGS += -DPREEMPTION
 $(LIB_SO): $(OBJ)
 	@mkdir -p $(LIB_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
@@ -46,7 +45,10 @@ $(BIN_DIR)/%: tst/%.c $(LIB_SO)
 
 $(BIN_DIR)/71-preemption: tst/71-preemption.c $(LIB_SO)
 	@mkdir -p $(BIN_DIR)
+	gcc -Wall -Wextra -g -fPIC -Isrc   -DPREEMPTION -c src/thread.c -o src/thread.o
+	gcc -Wall -Wextra -g -fPIC -Isrc   -DPREEMPTION -shared -o install/lib/libthread.so src/thread.o src/list_handler.o
 	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread -Wl,-rpath,$(LIB_DIR)
+
 
 # Compile test executables and place them in $(BIN_DIR) using pthread
 $(BIN_DIR)/p%: tst/%.c $(LIB_SO)
@@ -56,8 +58,6 @@ $(BIN_DIR)/p%: tst/%.c $(LIB_SO)
 # Install the library and executables
 install: all
 	@mkdir -p $(LIB_DIR) $(BIN_DIR)
-	
-	
 
 # Install pthread executables
 pthread: $(TEST_TARGETS_PTHREAD)
