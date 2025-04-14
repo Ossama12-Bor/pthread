@@ -22,7 +22,7 @@ struct itimerval timer;
 
 void timer_handler(int sig) {
 	(void) sig;
-	assert(!thread_yield());
+	thread_yield();
 }
 
 
@@ -280,3 +280,4 @@ int thread_mutex_unlock(thread_mutex_t *mutex) {
 }
 
 #endif /* USE_PTHREAD */
+
