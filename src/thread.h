@@ -41,10 +41,16 @@ extern void thread_exit(void *retval) __attribute__ ((__noreturn__));
 
 /* Interface possible pour les mutex */
 typedef struct thread_mutex { int dummy; } thread_mutex_t;
+typedef struct thread_sem { int dummy; } thread_sem_t;
 int thread_mutex_init(thread_mutex_t *mutex);
 int thread_mutex_destroy(thread_mutex_t *mutex);
 int thread_mutex_lock(thread_mutex_t *mutex);
 int thread_mutex_unlock(thread_mutex_t *mutex);
+int thread_sem_init(thread_sem_t *sem,int pshared,int value);
+int thread_sem_destroy(thread_sem_t *sem);
+int thread_sem_wait(thread_sem_t *sem);
+int thread_sem_post(thread_sem_t *sem);
+int thread_sem_trywait(thread_sem_t *sem);
 
 #else /* USE_PTHREAD */
 

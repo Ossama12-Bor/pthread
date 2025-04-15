@@ -10,7 +10,6 @@
 #include <sys/signal.h>
 #ifndef USE_PTHREAD
 
-
 #define THREAD_STACK_SIZE 64*1024
 
 struct my_queue  * queue = NULL;
@@ -206,9 +205,9 @@ int thread_join(thread_t thread, void **retval) {
 	struct my_thread * current  = TAILQ_FIRST(queue);
 	struct my_thread * thr = thread;
 	assert(thr != NULL);
-	if(thr->wait == current){
+	/*if(thr->wait == current){
 		return EDEADLK;
-	}
+	}*/
 	thr->wait = current;
 	current->state =IS_WAITING;
 	if(thr->state != IS_FINISHED){
@@ -276,6 +275,44 @@ int thread_mutex_lock(thread_mutex_t *mutex) {
 
 int thread_mutex_unlock(thread_mutex_t *mutex) {
     mutex->dummy = 1;
+	return 0;
+}
+
+int thread_sem_init(thread_sem_t *sem,int pshared __attribute__((unused)),int value){
+	if (value < 0 || sem == NULL) {
+		return -1;
+	}
+
+	sem->dummy = value;
+	return 0;
+}
+
+int thread_sem_destroy(thread_sem_t *sem){
+	sem->dummy = -1;
+	return 0;
+}
+
+int thread_sem_wait(thread_sem_t *sem){
+	while(sem->dummy <= 0){
+		thread_yield();
+	}
+	sem->dummy = sem->dummy -1;
+	return 0;
+}
+
+int thread_sem_post(thread_sem_t *sem){
+	sem->dummy = sem->dummy + 1;
+	return 0;
+}
+
+int thread_sem_trywait(thread_sem_t *sem){
+	if(sem->dummy <= 0){
+		printf("sem->dummy <= 0\n");
+		thread_yield();
+		return -1;
+	}
+
+	sem->dummy -= 1;
 	return 0;
 }
 
