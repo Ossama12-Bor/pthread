@@ -18,7 +18,6 @@ int my_queue_size ;
 struct itimerval timer;
 #endif
 
-
 void timer_handler(int sig) {
 	(void) sig;
 	thread_yield();
@@ -255,26 +254,40 @@ void thread_exit(void *retval ) {
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {
-	mutex->dummy = 1;
+	mutex->queue = malloc(sizeof(struct mutex_queue));
+	TAILQ_INIT(mutex->queue);
+	if(mutex->queue == NULL){
+		perror("hadi ghir zidta\n");
+		return 1;
+	}
 	return 0;
 }
 
 int thread_mutex_destroy(thread_mutex_t *mutex) {
-    mutex->dummy = -1;
+    free(mutex->queue);
 	return 0;
 }
 
 int thread_mutex_lock(thread_mutex_t *mutex) {
-    while(mutex->dummy == 0){
+	struct mutex_thread * thread = malloc(sizeof(struct mutex_thread));
+	thread->thread = thread_self();
+	TAILQ_INSERT_TAIL(mutex->queue,thread,entries);
+	thread->thread->state = IS_BLOCKED;
+	if(thread != TAILQ_FIRST(mutex->queue)){
 		thread_yield();
 	}
-	if(mutex->dummy == 1)
-		mutex->dummy =0;
+		
+	thread->thread->state = IS_READY;
 	return 0;
 }
 
 int thread_mutex_unlock(thread_mutex_t *mutex) {
-    mutex->dummy = 1;
+	struct mutex_thread * first = TAILQ_FIRST(mutex->queue);
+    TAILQ_REMOVE(mutex->queue,first,entries);
+	free(first);
+	first = TAILQ_FIRST(mutex->queue);
+	if(first != NULL)
+		first->thread->state = IS_READY;
 	return 0;
 }
 

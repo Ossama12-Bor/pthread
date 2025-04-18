@@ -21,7 +21,13 @@ struct my_thread {
     void * retval;
 };
 
+struct mutex_thread {
+	struct my_thread *thread;
+	TAILQ_ENTRY(mutex_thread) entries;
+
+};
 TAILQ_HEAD(my_queue, my_thread);
+TAILQ_HEAD(mutex_queue,mutex_thread);
 
 void  head2tail(struct my_queue * queue);
 

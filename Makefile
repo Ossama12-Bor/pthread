@@ -20,7 +20,7 @@ TESTS = tst/01-main tst/02-switch tst/03-equity tst/11-join tst/12-join-main tst
         tst/62-mutex tst/81-deadlock tst/22-create-many-recursive \
         tst/33-switch-many-cascade tst/63-mutex-equity tst/23-create-many-once \
         tst/51-fibonacci tst/64-mutex-join tst/65-mutex-sum
-
+TESTWITHPREP = tst/66-semaphore tst/71-preemption
 # Generate test targets in $(BIN_DIR)
 TEST_TARGETS = $(patsubst tst/%, $(BIN_DIR)/%, $(TESTS))
 TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
@@ -28,7 +28,7 @@ TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
 .PHONY: all clean install pthread
 
 # Default target: compile the library and all tests
-all: $(LIB_SO) $(TEST_TARGETS) $(BIN_DIR)/71-preemption
+all: $(LIB_SO) $(TEST_TARGETS) $(BIN_DIR)/71-preemption #$(BIN_DIR)/66-semaphore
 
 # Build shared library
 $(LIB_SO): $(OBJ)
@@ -59,6 +59,10 @@ $(LIB_DIR)/libthread_preempt.so: $(OBJ_PREEMPT)
 $(BIN_DIR)/71-preemption: tst/71-preemption.c $(LIB_DIR)/libthread_preempt.so
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread_preempt -Wl,-rpath,$(LIB_DIR)
+$(BIN_DIR)/66-semaphore: tst/66-semaphore.c $(LIB_DIR)/libthread_preempt.so
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread_preempt -Wl,-rpath,$(LIB_DIR)
+
 
 
 # Install the library and executables
