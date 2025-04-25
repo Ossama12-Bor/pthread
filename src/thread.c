@@ -39,13 +39,14 @@ void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * waiting = current_thread->wait;
 	current_thread->state = IS_FINISHED;
 	if(waiting  != NULL){
-		if(my_queue_size > 2){
-			TAILQ_REMOVE(queue,waiting ,entries);
-			TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
-		}
+		TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
 		waiting->state = IS_READY;
+		my_queue_size++;
 	}
-	if(my_queue_size!=1){
+
+	TAILQ_REMOVE(queue,current_thread,entries);
+	my_queue_size--;
+	if(my_queue_size){
 		assert(!thread_yield());
 	}
 }
@@ -181,19 +182,21 @@ int thread_yield(void) {
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
 	if (my_queue_size > 1){
-		head2tail(queue);
-			if(!move_availale2head(queue)){
-				struct my_thread * last = TAILQ_LAST(queue,my_queue);
-				TAILQ_REMOVE(queue,last,entries);
-				TAILQ_INSERT_HEAD(queue,last,entries);
-				return 1;
-			}
+		if (current_thread->state == IS_WAITING){
+			TAILQ_REMOVE(queue,current_thread,entries);
+			my_queue_size--;
+		}
+		else {
+			head2tail(queue);
+		}
+		
 		struct my_thread  * thread = TAILQ_FIRST(queue);
 		if(thread != current_thread)
 			swapcontext(&(current_thread->uc),&(thread->uc));
 	}
-
-
+	else if (my_queue_size == 1 && current_thread->state == IS_WAITING){
+		return 1;
+	}
 
 	return 0;
     
@@ -213,10 +216,12 @@ int thread_join(thread_t thread, void **retval) {
 		if(my_queue_size > 2){
 			TAILQ_REMOVE(queue,thr,entries);
 			TAILQ_INSERT_AFTER(queue,current,thr,entries);
+
 		}
 		err = thread_yield();
 		if(err == 1){
-			thr->wait = NULL;
+			printf("mal zaml bok\n");
+			// thr->wait = NULL;
 			current->state =IS_READY;
 			return EDEADLK;
 		}
@@ -226,8 +231,6 @@ int thread_join(thread_t thread, void **retval) {
 	
 	if(retval != NULL)
 		*retval = thr->retval;
-	TAILQ_REMOVE(queue,thr,entries);
-	my_queue_size--;
 	if(thread!= main_id_thread){
 		VALGRIND_STACK_DEREGISTER(thr->valgrind_stackid);
 		free(thr->uc.uc_stack.ss_sp);
@@ -243,12 +246,12 @@ void thread_exit(void *retval ) {
 	current_thread->state = IS_FINISHED;
 	current_thread->retval = retval;
 	if(waiting  != NULL){
-		if(my_queue_size > 2){
-			TAILQ_REMOVE(queue,waiting ,entries);
-			TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
-		}
+		TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
+		my_queue_size++;
 		waiting->state = IS_READY;
 	}
+	TAILQ_REMOVE(queue,current_thread,entries);
+	my_queue_size--;
     assert(!thread_yield());
     abort();
 }
