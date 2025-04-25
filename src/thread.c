@@ -36,19 +36,7 @@ void timer_handler(int sig) {
 void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
-	struct my_thread * waiting = current_thread->wait;
-	current_thread->state = IS_FINISHED;
-	if(waiting  != NULL){
-		TAILQ_INSERT_AFTER(queue,current_thread,waiting ,entries);
-		waiting->state = IS_READY;
-		my_queue_size++;
-	}
-
-	TAILQ_REMOVE(queue,current_thread,entries);
-	my_queue_size--;
-	if(my_queue_size){
-		assert(!thread_yield());
-	}
+	thread_exit(current_thread->retval);
 }
 
 
@@ -252,7 +240,10 @@ void thread_exit(void *retval ) {
 	}
 	TAILQ_REMOVE(queue,current_thread,entries);
 	my_queue_size--;
-    assert(!thread_yield());
+    if(my_queue_size){
+		struct my_thread * thread = TAILQ_FIRST(queue);
+		swapcontext(&(current_thread->uc),&(thread->uc));
+	}
     abort();
 }
 
