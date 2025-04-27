@@ -4,28 +4,7 @@
 
 thread_t main_id_thread;
 
-struct my_thread * first_available(struct my_queue * queue ){
-	if(queue != NULL){
-		struct my_thread *var,*tmp ;
-		TAILQ_FOREACH_SAFE(var, queue, entries,tmp){
-			if (var->state == IS_READY){
-				return var;
-			}
-		}
-	}
-	return  NULL;
-}
 
-/*struct my_thread * find(struct my_queue * queue , thread_t id) 
-{   
-    struct my_thread *var = NULL;
-    TAILQ_FOREACH(var, queue, entries){  
-        if (var->id == id){
-            return var;
-        }
-    }
-    return NULL;
-}*/
 
 void head2tail(struct my_queue * queue){
 	struct my_thread *var = TAILQ_FIRST(queue) ;
@@ -33,16 +12,7 @@ void head2tail(struct my_queue * queue){
 	TAILQ_INSERT_TAIL(queue,var,entries);
 }
 
-int move_availale2head(struct my_queue * queue){
-	struct my_thread *var = first_available(queue);
-	if (var == NULL){
-		return 0;
-	}
-	TAILQ_REMOVE(queue, var, entries);
-	TAILQ_INSERT_HEAD(queue,var,entries);
-	return 1;
 
-}
 
 void queue_free(struct my_queue **queue){
 	if(queue!=NULL){
@@ -59,5 +29,4 @@ void queue_free(struct my_queue **queue){
 	
 	free(*queue);
 	}
-	*queue = NULL;
 }
