@@ -15,7 +15,7 @@ OBJ_PREEMPT = src/thread_preempt.o src/list_handler.o
 DEPS = src/thread.h  src/list_handler.h # Header file dependency
 
 # List of tests
-TESTS = tst/01-main tst/02-switch tst/03-equity tst/11-join tst/12-join-main tst/31-switch-many \
+TESTS = tst/01-main tst/02-switch tst/03-equity tst/11-join tst/12-join-main tst/13-join-switch tst/31-switch-many \
         tst/61-mutex tst/21-create-many tst/32-switch-many-join \
         tst/62-mutex tst/81-deadlock tst/22-create-many-recursive \
         tst/33-switch-many-cascade tst/63-mutex-equity tst/23-create-many-once \
