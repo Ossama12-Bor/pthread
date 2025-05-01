@@ -41,7 +41,6 @@ void handler(int sig) {
 void preempt_start(void) {
     // Set signal handler.
     sa.sa_handler = handler;
-    // Initialize signal mask.
     sigemptyset(&sa.sa_mask);
     // Set the flags
     sa.sa_flags = 0;
@@ -67,6 +66,7 @@ void preempt_start(void) {
 
 
 // Fonction pour mettre le main dans la queue
+
 
 
 void utils(void *(*func)(void*),void * funcarg){
@@ -255,6 +255,7 @@ int thread_join(thread_t thread, void **retval) {
 	return 0;
 
 }
+
 
 void thread_exit(void *retval ) {
 	#ifdef PREEMPTION
