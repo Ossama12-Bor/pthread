@@ -23,50 +23,34 @@ int my_queue_size ;
 #ifdef PREEMPTION
 static struct sigaction sa;
 static struct itimerval timer;
+static int preemption_initialized = 0;
 
 void preempt_disable(void) {
-    sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
+    if (preemption_initialized)
+        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
 }
 
 void preempt_enable(void) {
-    sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
-}
-
-void handler(int sig) {
-	#ifdef PREEMPTION
-    preempt_disable();
-    #endif
-
-
-    if (sig == SIGVTALRM) {
-        thread_yield();
-    }
-	#ifdef PREEMPTION
-    preempt_enable();
-    #endif
-
-
+    if (preemption_initialized)
+        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
 }
 
 void preempt_start(void) {
-    // Set signal handler.
     sa.sa_handler = handler;
     sigemptyset(&sa.sa_mask);
-    // Set the flags
     sa.sa_flags = 0;
-    // Set sugaction.
     sigaction(SIGVTALRM, &sa, NULL);
 
-    // Set up the timer.
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = 1000;
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 1000;
 
     setitimer(ITIMER_VIRTUAL, &timer, NULL);
+
+    preemption_initialized = 1; 
 }
 #endif
-
 
 
 //int deadlock;
