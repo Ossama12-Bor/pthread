@@ -70,9 +70,9 @@ void preempt_start(void) {
 
 
 void utils(void *(*func)(void*),void * funcarg){
-	#ifdef PREEMPTION
+/*	#ifdef PREEMPTION
 	preempt_enable();
-	#endif
+	#endif*/
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
 /*	#ifdef PREEMPTION
