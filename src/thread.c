@@ -70,9 +70,9 @@ void preempt_start(void) {
 
 
 void utils(void *(*func)(void*),void * funcarg){
-/*	#ifdef PREEMPTION
+	#ifdef PREEMPTION
 	preempt_enable();
-	#endif*/
+	#endif
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
 /*	#ifdef PREEMPTION
@@ -181,9 +181,7 @@ thread_t thread_self(void) {
 }
 
 int thread_yield(void) {
-	#ifdef PREEMPTION
-    preempt_disable();
-    #endif
+
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
 	if (my_queue_size > 1){
@@ -197,15 +195,19 @@ int thread_yield(void) {
 		
 		struct my_thread  * thread = TAILQ_FIRST(queue);
 		if(thread != current_thread) {
+			#ifdef PREEMPTION
+    preempt_disable();
+    #endif
 			swapcontext(&(current_thread->uc),&(thread->uc));
+		
+			#ifdef PREEMPTION
+			preempt_enable();
+			#endif
 		}
 	}
 	else if (my_queue_size == 1 && current_thread->state == IS_WAITING){
 		return 1;
 	}
-    #ifdef PREEMPTION
-    preempt_enable();
-    #endif
 	return 0;
     
 }
