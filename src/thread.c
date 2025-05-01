@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include <valgrind/valgrind.h>
 #include <errno.h>
+#include <string.h>
 #include <sys/signal.h>
 #ifndef USE_PTHREAD
 
@@ -19,13 +20,29 @@ int my_queue_size ;
 
 
 #ifdef PREEMPTION
-struct itimerval timer;
+ struct itimerval timer;
+// void timer_handler(int sig) {
+//     sigset_t set, old;
+//     sigemptyset(&set);
+//     sigaddset(&set, SIGPROF);
+//     sigprocmask(SIG_BLOCK, &set, &old);
+//     thread_yield();
+//     sigprocmask(SIG_SETMASK, &old, NULL);
+// }
 void timer_handler(int sig) {
     sigset_t set, old;
+    memset(&set, 0, sizeof(sigset_t));
+    memset(&old, 0, sizeof(sigset_t));
+    
     sigemptyset(&set);
     sigaddset(&set, SIGPROF);
-    sigprocmask(SIG_BLOCK, &set, &old);
-    thread_yield();
+    
+    if (sigprocmask(SIG_BLOCK, &set, &old) == -1) return;
+    
+    if (my_queue_size > 1 && !TAILQ_EMPTY(queue)) {
+        thread_yield();
+    }
+    
     sigprocmask(SIG_SETMASK, &old, NULL);
 }
 #endif
@@ -69,8 +86,8 @@ int initialize_queue(){
     sa.sa_flags = SA_RESTART | SA_SIGINFO; 
     sigemptyset(&sa.sa_mask);
     sigaction(SIGPROF, &sa, NULL);  
-    timer.it_value.tv_usec = 100;
-    timer.it_interval.tv_usec = 100;
+    timer.it_value.tv_usec = 1000;
+    timer.it_interval.tv_usec = 1000;
     setitimer(ITIMER_PROF, &timer, NULL);  
 #endif
 
