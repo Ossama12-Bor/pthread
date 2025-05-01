@@ -181,6 +181,9 @@ thread_t thread_self(void) {
 }
 
 int thread_yield(void) {
+	#ifdef PREEMPTION
+    preempt_disable();
+    #endif
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
 	if (my_queue_size > 1){
@@ -206,7 +209,9 @@ int thread_yield(void) {
 	else if (my_queue_size == 1 && current_thread->state == IS_WAITING){
 		return 1;
 	}
-
+    #ifdef PREEMPTION
+    preempt_enable();
+    #endif
 	return 0;
     
 }
@@ -281,7 +286,7 @@ void thread_exit(void *retval ) {
 	#ifdef PREEMPTION
     preempt_enable();
 	#endif
- //   exit(0);
+    exit(0);
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {
