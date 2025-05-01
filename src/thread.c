@@ -127,7 +127,10 @@ void my_destructor() {
 }
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
-  
+	#ifdef PREEMPTION
+	preempt_disable();  
+	#endif
+
     struct my_thread *new_item = (struct my_thread *)malloc(sizeof(*new_item));
     if (new_item == NULL) {
         perror("Failed to allocate memory for new thread");
@@ -137,9 +140,6 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     
     new_item->state = IS_READY;
 
-	#ifdef PREEMPTION
-	preempt_disable();  
-	#endif
     if (getcontext(&new_item->uc) == -1) {
         perror("getcontext failed");
         free(new_item);  
