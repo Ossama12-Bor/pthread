@@ -16,14 +16,19 @@ struct my_queue  * queue = NULL;
 //struct my_queue * waiting_queue = NULL;
 
 int my_queue_size ;
+
 #ifdef PREEMPTION
 struct itimerval timer;
+void timer_handler(int sig) {
+    sigset_t set, old;
+    sigemptyset(&set);
+    sigaddset(&set, SIGPROF);
+    sigprocmask(SIG_BLOCK, &set, &old);
+    thread_yield();
+    sigprocmask(SIG_SETMASK, &old, NULL);
+}
 #endif
 
-void timer_handler(int sig) {
-	(void) sig;
-	thread_yield();
-}
 
 
 //int deadlock;
@@ -58,13 +63,16 @@ int initialize_queue(){
 	main_id_thread = (thread_t)main_thread;
 	main_thread->wait = NULL;
 	#ifdef PREEMPTION
-	signal(SIGALRM, timer_handler);
-    timer.it_value.tv_sec = 0;      
-    timer.it_value.tv_usec = 10;     
-    timer.it_interval.tv_sec = 0;   
-    timer.it_interval.tv_usec = 100;  
-    setitimer(ITIMER_REAL, &timer, NULL);
-	#endif
+    struct sigaction sa = {0};
+    sa.sa_handler = timer_handler;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO; 
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGPROF, &sa, NULL);  
+    timer.it_value.tv_usec = 100;
+    timer.it_interval.tv_usec = 100;
+    setitimer(ITIMER_PROF, &timer, NULL);  
+#endif
+
 	return 0;
 
 
