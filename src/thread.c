@@ -64,12 +64,12 @@ void timer_handler(int sig) {
 void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
-	#ifdef PREEMPTION
+/*	#ifdef PREEMPTION
 	if (preempt_flag) {
 		preempt_flag = 0;
 	    thread_yield();
 	}
-	#endif	
+	#endif	*/
 	thread_exit(current_thread->retval);
 }
 
