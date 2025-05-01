@@ -137,12 +137,17 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     
     new_item->state = IS_READY;
 
-    
+	#ifdef PREEMPTION
+	preempt_disable();  
+	#endif
     if (getcontext(&new_item->uc) == -1) {
         perror("getcontext failed");
         free(new_item);  
         return -1;
     }
+	#ifdef PREEMPTION
+	preempt_enable();  
+	#endif
 
     
     new_item->uc.uc_link = NULL;  
