@@ -102,6 +102,8 @@ void my_constructor() {
     initialize_queue();
 }
 
+
+
 __attribute__((destructor))
 void my_destructor() {
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
@@ -109,26 +111,6 @@ void my_destructor() {
 	free(queue);
 
 }
-
-#ifdef PREEMPTION
-__attribute__((destructor))
-void my_destructor() {
-    if (queue != NULL) {
-        struct my_thread *current;
-        // Parcourir et libérer tous les threads
-        while ((current = TAILQ_FIRST(queue)) != NULL) {
-            TAILQ_REMOVE(queue, current, entries);
-            if (current != main_id_thread) {
-                VALGRIND_STACK_DEREGISTER(current->valgrind_stackid);
-                free(current->uc.uc_stack.ss_sp);
-            }
-            free(current);
-        }
-        free(queue);
-        queue = NULL;
-    }
-}
-#endif
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
   
