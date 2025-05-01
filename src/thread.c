@@ -281,7 +281,7 @@ void thread_exit(void *retval ) {
 	#ifdef PREEMPTION
     preempt_enable();
 	#endif
-    exit(0);
+ //   exit(0);
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {
