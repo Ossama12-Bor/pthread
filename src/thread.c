@@ -19,34 +19,42 @@ struct my_queue  * queue = NULL;
 int my_queue_size ;
 
 
-#ifdef PREEMPTION
- struct itimerval timer;
- volatile sig_atomic_t preempt_flag = 0;
 
-// void timer_handler(int sig) {
-//     sigset_t set, old;
-//     sigemptyset(&set);
-//     sigaddset(&set, SIGPROF);
-//     sigprocmask(SIG_BLOCK, &set, &old);
-//     thread_yield();
-//     sigprocmask(SIG_SETMASK, &old, NULL);
-// }
-void timer_handler(int sig) {
-    preempt_flag = 1;
-    sigset_t set, old;
- //   memset(&set, 0, sizeof(sigset_t));
- //   memset(&old, 0, sizeof(sigset_t));
-    
-    sigemptyset(&set);
-    sigaddset(&set, SIGPROF);
-    
-    if (sigprocmask(SIG_BLOCK, &set, &old) == -1) return;
-    
-    if (my_queue_size > 1 && !TAILQ_EMPTY(queue)) {
+#ifdef PREEMPTION
+static struct sigaction sa;
+static struct itimerval timer;
+
+void preempt_disable(void) {
+    sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
+}
+
+void preempt_enable(void) {
+    sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
+}
+
+void handler(int sig) {
+    if (sig == SIGVTALRM) {
         thread_yield();
     }
-    
-    sigprocmask(SIG_SETMASK, &old, NULL);
+}
+
+void preempt_start(void) {
+    // Set signal handler.
+    sa.sa_handler = handler;
+    // Initialize signal mask.
+    sigemptyset(&sa.sa_mask);
+    // Set the flags
+    sa.sa_flags = 0;
+    // Set sugaction.
+    sigaction(SIGVTALRM, &sa, NULL);
+
+    // Set up the timer.
+    timer.it_value.tv_sec = 0;
+    timer.it_value.tv_usec = 1000;
+    timer.it_interval.tv_sec = 0;
+    timer.it_interval.tv_usec = 1000;
+
+    setitimer(ITIMER_VIRTUAL, &timer, NULL);
 }
 #endif
 
@@ -70,6 +78,9 @@ void utils(void *(*func)(void*),void * funcarg){
 	    thread_yield();
 	}
 	#endif	*/
+	#ifdef PREEMPTION
+	preempt_enable();
+	#endif
 	thread_exit(current_thread->retval);
 }
 
@@ -90,15 +101,8 @@ int initialize_queue(){
 	main_id_thread = (thread_t)main_thread;
 	main_thread->wait = NULL;
 	#ifdef PREEMPTION
-    struct sigaction sa = {0};
-    sa.sa_handler = timer_handler;
-    sa.sa_flags = SA_RESTART | SA_SIGINFO; 
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGPROF, &sa, NULL);  
-    timer.it_value.tv_usec = 100000;
-    timer.it_interval.tv_usec = 3000;
-    setitimer(ITIMER_PROF, &timer, NULL);  
-#endif
+    preempt_start();
+	#endif
 
 	return 0;
 
@@ -175,11 +179,6 @@ thread_t thread_self(void) {
 }
 
 int thread_yield(void) {
-	#ifdef PREEMPTION
-	if (preempt_flag) {
-		preempt_flag = 0;
-	}
-	#endif	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
 	if (my_queue_size > 1){
@@ -192,8 +191,15 @@ int thread_yield(void) {
 		}
 		
 		struct my_thread  * thread = TAILQ_FIRST(queue);
-		if(thread != current_thread)
+		if(thread != current_thread) {
+			#ifdef PREEMPTION
+		    preempt_disable();
+			#endif
 			swapcontext(&(current_thread->uc),&(thread->uc));
+			#ifdef PREEMPTION
+		    preempt_enable();
+			#endif
+		}
 	}
 	else if (my_queue_size == 1 && current_thread->state == IS_WAITING){
 		return 1;
@@ -214,11 +220,17 @@ int thread_join(thread_t thread, void **retval) {
 	thr->wait = current;
 	current->state =IS_WAITING;
 	if(thr->state != IS_FINISHED){
+		#ifdef PREEMPTION
+		preempt_disable();
+		#endif 
 		if(my_queue_size > 2 && thr->state != IS_WAITING){
 			TAILQ_REMOVE(queue,thr,entries);
 			TAILQ_INSERT_AFTER(queue,current,thr,entries);
 
 		}
+		#ifdef PREEMPTION
+		preempt_enable();
+		#endif
 		err = thread_yield();
 		if(err == 1){
 			printf("mal zaml bok\n");
@@ -243,6 +255,9 @@ int thread_join(thread_t thread, void **retval) {
 }
 
 void thread_exit(void *retval ) {
+	#ifdef PREEMPTION
+    preempt_disable();
+	#endif
     struct my_thread * current_thread = TAILQ_FIRST(queue);
 	struct my_thread * waiting = current_thread->wait;
 	current_thread->state = IS_FINISHED;
@@ -260,6 +275,9 @@ void thread_exit(void *retval ) {
 	}
 	TAILQ_INSERT_HEAD(queue,current_thread,entries);
 	my_queue_size++;
+	#ifdef PREEMPTION
+    preempt_enable();
+	#endif
     exit(0);
 }
 
