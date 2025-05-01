@@ -95,7 +95,7 @@ int initialize_queue(){
     sa.sa_flags = SA_RESTART | SA_SIGINFO; 
     sigemptyset(&sa.sa_mask);
     sigaction(SIGPROF, &sa, NULL);  
-    timer.it_value.tv_usec = 80000;
+    timer.it_value.tv_usec = 100000;
     timer.it_interval.tv_usec = 3000;
     setitimer(ITIMER_PROF, &timer, NULL);  
 #endif
