@@ -127,9 +127,9 @@ void my_destructor() {
 }
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
-	#ifdef PREEMPTION
+/*	#ifdef PREEMPTION
 	preempt_disable();  
-	#endif
+	#endif*/
 
     struct my_thread *new_item = (struct my_thread *)malloc(sizeof(*new_item));
     if (new_item == NULL) {
