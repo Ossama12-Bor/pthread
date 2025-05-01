@@ -89,7 +89,16 @@ int initialize_queue(){
 	my_queue_size = 1;
 	main_id_thread = (thread_t)main_thread;
 	main_thread->wait = NULL;
-
+	#ifdef PREEMPTION
+    struct sigaction sa = {0};
+    sa.sa_handler = timer_handler;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO; 
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGPROF, &sa, NULL);  
+    timer.it_value.tv_usec = 80000;
+    timer.it_interval.tv_usec = 10000;
+    setitimer(ITIMER_PROF, &timer, NULL);  
+#endif
 
 	return 0;
 
@@ -113,16 +122,7 @@ void my_destructor() {
 }
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
-	#ifdef PREEMPTION
-    struct sigaction sa = {0};
-    sa.sa_handler = timer_handler;
-    sa.sa_flags = SA_RESTART | SA_SIGINFO; 
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGPROF, &sa, NULL);  
-    timer.it_value.tv_usec = 80000;
-    timer.it_interval.tv_usec = 1000;
-    setitimer(ITIMER_PROF, &timer, NULL);  
-#endif
+  
     struct my_thread *new_item = (struct my_thread *)malloc(sizeof(*new_item));
     if (new_item == NULL) {
         perror("Failed to allocate memory for new thread");
