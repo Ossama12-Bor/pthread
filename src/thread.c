@@ -31,8 +31,8 @@ int my_queue_size ;
 // }
 void timer_handler(int sig) {
     sigset_t set, old;
-    memset(&set, 0, sizeof(sigset_t));
-    memset(&old, 0, sizeof(sigset_t));
+ //   memset(&set, 0, sizeof(sigset_t));
+ //   memset(&old, 0, sizeof(sigset_t));
     
     sigemptyset(&set);
     sigaddset(&set, SIGPROF);
