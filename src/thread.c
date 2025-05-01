@@ -156,9 +156,10 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
         free(new_item);  
         return -1;
     }
-
+	#ifdef PREEMPTION
+	preempt_disable();  
+	#endif
     makecontext(&new_item->uc, (void (*)(void))utils, 2, func , funcarg);
-
     
     TAILQ_INSERT_AFTER(queue,TAILQ_FIRST(queue),new_item, entries);
 
