@@ -21,6 +21,8 @@ int my_queue_size ;
 
 #ifdef PREEMPTION
  struct itimerval timer;
+ volatile sig_atomic_t preempt_flag = 0;
+
 // void timer_handler(int sig) {
 //     sigset_t set, old;
 //     sigemptyset(&set);
@@ -30,6 +32,7 @@ int my_queue_size ;
 //     sigprocmask(SIG_SETMASK, &old, NULL);
 // }
 void timer_handler(int sig) {
+    preempt_flag = 1;
     sigset_t set, old;
  //   memset(&set, 0, sizeof(sigset_t));
  //   memset(&old, 0, sizeof(sigset_t));
@@ -61,6 +64,12 @@ void timer_handler(int sig) {
 void utils(void *(*func)(void*),void * funcarg){
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
+	#ifdef PREEMPTION
+	if (preempt_flag) {
+		preempt_flag = 0;
+	    thread_yield();
+	}
+	#endif	
 	thread_exit(current_thread->retval);
 }
 
@@ -166,7 +175,11 @@ thread_t thread_self(void) {
 }
 
 int thread_yield(void) {
-	
+	#ifdef PREEMPTION
+	if (preempt_flag) {
+		preempt_flag = 0;
+	}
+	#endif	
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 
 	if (my_queue_size > 1){
