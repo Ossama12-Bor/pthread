@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     }
 
     /* On participe au réchauffement climatique */
-    //thfunc( (void*)((intptr_t)nb) );
+    thfunc( (void*)((intptr_t)nb) );
 
     /* on les join tous, maintenant qu'ils sont tous morts */
     score = values[nb];
