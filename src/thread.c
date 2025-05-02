@@ -52,9 +52,9 @@ void preempt_start(void) {
     sigaction(SIGVTALRM, &sa, NULL);
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 4000;
+    timer.it_value.tv_usec = 8000;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 1000;
+    timer.it_interval.tv_usec = 5000;
 
     setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
