@@ -36,17 +36,11 @@ void preempt_enable(void) {
 }
 
 void handler(int sig) {
-	#ifdef PREEMPTION
-    preempt_disable();
-    #endif
 
 
     if (sig == SIGVTALRM) {
         thread_yield();
     }
-	#ifdef PREEMPTION
-    preempt_enable();
-    #endif
 
 
 }
