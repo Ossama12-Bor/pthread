@@ -52,13 +52,29 @@ void preempt_start(void) {
     sigaction(SIGPROF, &sa, NULL);
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 1000;
+    timer.it_value.tv_usec = 8000;
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 3500;
 
     setitimer(ITIMER_PROF, &timer, NULL);
 
     preemption_initialized = 1;  
+}
+
+void sigterm_handler(int signum) {
+    // Gérer SIGTERM ici, par exemple en terminant les threads proprement
+    fprintf(stderr, "Signal SIGTERM reçu\n");
+
+    // Tu peux décider de sortir proprement ou de faire autre chose
+    exit(1);  // Quitter avec un code d'erreur ou effectuer des actions propres avant
+}
+
+void setup_sigterm_handler() {
+    struct sigaction sa;
+    sa.sa_handler = sigterm_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGTERM, &sa, NULL);  // Installer le gestionnaire pour SIGTERM
 }
 
 #endif
@@ -74,25 +90,24 @@ void preempt_start(void) {
 // Fonction pour mettre le main dans la queue
 
 
-
-void utils(void *(*func)(void*),void * funcarg){
-	#ifdef PREEMPTION
+void utils(void *(*func)(void*), void *funcarg) {
+    #ifdef PREEMPTION
     sigset_t new_mask, old_mask;
     sigemptyset(&new_mask);
-    sigaddset(&new_mask, SIGTERM);
-
+    sigaddset(&new_mask, SIGTERM); // Bloquer SIGTERM dans cette fonction spécifique
     sigprocmask(SIG_BLOCK, &new_mask, &old_mask);
-	preempt_enable();
-	#endif
-	struct my_thread * current_thread = TAILQ_FIRST(queue);
-	current_thread->retval = func(funcarg);
-	#ifdef PREEMPTION
-    sigprocmask(SIG_SETMASK, &old_mask, NULL);
-	#endif	
+    preempt_enable();
+    #endif
 
-	thread_exit(current_thread->retval);
+    struct my_thread *current_thread = TAILQ_FIRST(queue);
+    current_thread->retval = func(funcarg);
+
+    #ifdef PREEMPTION
+    sigprocmask(SIG_SETMASK, &old_mask, NULL);  // Rétablir les signaux
+    #endif
+
+    thread_exit(current_thread->retval);
 }
-
 
 int initialize_queue(){
 	//assert(!thread_mutex_init(&locker));
