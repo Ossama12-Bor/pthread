@@ -52,7 +52,7 @@ void preempt_start(void) {
     sigaction(SIGPROF, &sa, NULL);
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 4000;
+    timer.it_value.tv_usec = 2000;
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 2000;
 
