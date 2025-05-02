@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -fPIC -I$(INC_DIR)
+CFLAGS = -Wall -Wextra -g -O0 -fPIC -I$(INC_DIR)
 LDFLAGS = -shared
 INSTALL_DIR = install
 LIB_DIR = $(INSTALL_DIR)/lib
@@ -59,6 +59,8 @@ $(LIB_DIR)/libthread_preempt.so: $(OBJ_PREEMPT)
 $(BIN_DIR)/71-preemption: tst/71-preemption.c $(LIB_DIR)/libthread_preempt.so
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread_preempt -Wl,-rpath,$(LIB_DIR)
+	rm -f valgrind.xml
+
 $(BIN_DIR)/66-semaphore: tst/66-semaphore.c $(LIB_DIR)/libthread_preempt.so
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -DPREEMPTION -o $@ $< -L$(LIB_DIR) -lthread_preempt -Wl,-rpath,$(LIB_DIR)
