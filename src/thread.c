@@ -93,10 +93,22 @@ void setup_sigterm_handler() {
 void utils(void *(*func)(void*), void *funcarg) {
     #ifdef PREEMPTION
     preempt_enable();
+    struct sigaction sa_ignore;
+    sa_ignore.sa_handler = SIG_IGN;  
+    sigemptyset(&sa_ignore.sa_mask);
+    sa_ignore.sa_flags = 0;
+    sigaction(SIGTERM, &sa_ignore, NULL);
     #endif
 
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
+	#ifdef	PREEMPTION
+    struct sigaction sa_default;
+    sa_default.sa_handler = SIG_DFL; 
+    sigemptyset(&sa_default.sa_mask);
+    sa_default.sa_flags = 0;
+    sigaction(SIGTERM, &sa_default, NULL); 
+	#endif
     thread_exit(current_thread->retval);
 }
 
