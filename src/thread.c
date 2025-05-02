@@ -92,20 +92,11 @@ void setup_sigterm_handler() {
 
 void utils(void *(*func)(void*), void *funcarg) {
     #ifdef PREEMPTION
-    sigset_t new_mask, old_mask;
-    sigemptyset(&new_mask);
-    sigaddset(&new_mask, SIGTERM); // Bloquer SIGTERM dans cette fonction spécifique
-    sigprocmask(SIG_BLOCK, &new_mask, &old_mask);
+    preempt_enable();
     #endif
 
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
-
-    #ifdef PREEMPTION
-    preempt_enable();
-    sigprocmask(SIG_SETMASK, &old_mask, NULL);  // Rétablir les signaux
-    #endif
-
     thread_exit(current_thread->retval);
 }
 
@@ -304,7 +295,9 @@ void thread_exit(void *retval ) {
 	#ifdef PREEMPTION
     preempt_enable();
 	#endif
+	#ifndef PREEMPTION
     exit(0);
+	#endif
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {
