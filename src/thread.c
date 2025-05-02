@@ -199,14 +199,14 @@ int thread_yield(void) {
 		
 		struct my_thread  * thread = TAILQ_FIRST(queue);
 		if(thread != current_thread) {
-			#ifdef PREEMPTION
+	/*		#ifdef PREEMPTION
     preempt_disable();
-    #endif
+    #endif*/
 			swapcontext(&(current_thread->uc),&(thread->uc));
 		
-			#ifdef PREEMPTION
+	/*	#ifdef PREEMPTION
 			preempt_enable();
-			#endif
+			#endif*/
 		}
 	}
 	else if (my_queue_size == 1 && current_thread->state == IS_WAITING){
