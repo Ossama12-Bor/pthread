@@ -96,13 +96,13 @@ void utils(void *(*func)(void*), void *funcarg) {
     sigemptyset(&new_mask);
     sigaddset(&new_mask, SIGTERM); // Bloquer SIGTERM dans cette fonction spécifique
     sigprocmask(SIG_BLOCK, &new_mask, &old_mask);
-    preempt_enable();
     #endif
 
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
 
     #ifdef PREEMPTION
+    preempt_enable();
     sigprocmask(SIG_SETMASK, &old_mask, NULL);  // Rétablir les signaux
     #endif
 
