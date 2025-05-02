@@ -77,16 +77,18 @@ void preempt_start(void) {
 
 void utils(void *(*func)(void*),void * funcarg){
 	#ifdef PREEMPTION
+    sigset_t new_mask, old_mask;
+    sigemptyset(&new_mask);
+    sigaddset(&new_mask, SIGTERM);
+
+    sigprocmask(SIG_BLOCK, &new_mask, &old_mask);
 	preempt_enable();
 	#endif
 	struct my_thread * current_thread = TAILQ_FIRST(queue);
 	current_thread->retval = func(funcarg);
-/*	#ifdef PREEMPTION
-	if (preempt_flag) {
-		preempt_flag = 0;
-	    thread_yield();
-	}
-	#endif	*/
+	#ifdef PREEMPTION
+    sigprocmask(SIG_SETMASK, &old_mask, NULL);
+	#endif	
 
 	thread_exit(current_thread->retval);
 }
