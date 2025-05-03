@@ -41,7 +41,7 @@ void handler(int sig) {
 
     // gettimeofday(&tv1, NULL);
 
-    if (sig == SIGVTALRM) {
+    if (sig == SIGVTALRM && my_queue_size > 1) {
         thread_yield();
     }
     // gettimeofday(&tv2, NULL);
