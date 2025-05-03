@@ -178,6 +178,7 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
     return 0;  // Success
 }
 
+
 thread_t thread_self(void) {
 	
     thread_t thr = TAILQ_FIRST(queue);
