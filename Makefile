@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Ofast -march=native -Wextra -g -O0 -fPIC -I$(INC_DIR)
+CFLAGS = -Ofast -march=native -g -fPIC -I$(INC_DIR)
 LDFLAGS = -shared
 INSTALL_DIR = install
 LIB_DIR = $(INSTALL_DIR)/lib
