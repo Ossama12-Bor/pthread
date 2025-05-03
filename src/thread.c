@@ -36,11 +36,18 @@ void preempt_enable(void) {
 }
 
 void handler(int sig) {
+    // struct timeval tv1, tv2;
+    // unsigned long us;
 
+    // gettimeofday(&tv1, NULL);
 
-    if (sig == SIGPROF) {
+    if (sig == SIGVTALRM) {
         thread_yield();
     }
+    // gettimeofday(&tv2, NULL);
+	// us = (tv2.tv_sec-tv1.tv_sec)*1000000+(tv2.tv_usec-tv1.tv_usec);
+
+    // printf("Programme exécuté en %ld us\n", us);
 
 
 }
@@ -49,14 +56,14 @@ void preempt_start(void) {
     sa.sa_handler = handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
-    sigaction(SIGPROF, &sa, NULL);
+    sigaction(SIGVTALRM, &sa, NULL);
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 300;
+    timer.it_value.tv_usec = 100;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 1000;
+    timer.it_interval.tv_usec = 100;
 
-    setitimer(ITIMER_PROF, &timer, NULL);
+    setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
     preemption_initialized = 1;  
 }
@@ -91,24 +98,11 @@ void setup_sigterm_handler() {
 
 
 void utils(void *(*func)(void*), void *funcarg) {
-    #ifdef PREEMPTION
-    preempt_enable();
-    /* struct sigaction sa_ignore; */
-    /* sa_ignore.sa_handler = SIG_IGN;   */
-    /* sigemptyset(&sa_ignore.sa_mask); */
-    /* sa_ignore.sa_flags = 0; */
-    /* sigaction(SIGTERM, &sa_ignore, NULL); */
-    #endif
-
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
-    /* 	#ifdef	PREEMPTION */
-    /* struct sigaction sa_default; */
-    /* sa_default.sa_handler = SIG_DFL;  */
-    /* sigemptyset(&sa_default.sa_mask); */
-    /* sa_default.sa_flags = 0; */
-    /* sigaction(SIGTERM, &sa_default, NULL);  */
-    /* 	#endif */
+	#ifdef	PREEMPTION
+	preempt_enable();
+	#endif
     thread_exit(current_thread->retval);
 }
 
@@ -238,6 +232,10 @@ int thread_yield(void) {
 }
 
 int thread_join(thread_t thread, void **retval) {
+	#ifdef PREEMPTION
+	preempt_disable();
+	#endif 
+
 	int err;
 	struct my_thread * current  = TAILQ_FIRST(queue);
 	struct my_thread * thr = thread;
@@ -248,9 +246,6 @@ int thread_join(thread_t thread, void **retval) {
 	thr->wait = current;
 	current->state =IS_WAITING;
 	if(thr->state != IS_FINISHED){
-		#ifdef PREEMPTION
-		preempt_disable();
-		#endif 
 		if(my_queue_size > 2 && thr->state != IS_WAITING){
 			TAILQ_REMOVE(queue,thr,entries);
 			TAILQ_INSERT_AFTER(queue,current,thr,entries);
@@ -278,6 +273,10 @@ int thread_join(thread_t thread, void **retval) {
 		free(thr->uc.uc_stack.ss_sp);
 	}
 	free(thr);
+	#ifdef PREEMPTION
+	preempt_enable();
+	#endif 
+
 	return 0;
 
 }

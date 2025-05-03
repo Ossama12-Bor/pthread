@@ -20,7 +20,7 @@
  * - thread_join() sans récupération de la valeur de retour
  */
 #define NB_ITER     100
-#define ITER_LENGTH 1000000
+#define ITER_LENGTH 100000
 
 static int    fini  = 0;
 static double score = 0;
@@ -82,6 +82,9 @@ int main(int argc, char *argv[])
 
     /* on les join tous, maintenant qu'ils sont tous morts */
     score = values[nb];
+    gettimeofday(&tv2, NULL);
+    us = (tv2.tv_sec-tv1.tv_sec)*1000000+(tv2.tv_usec-tv1.tv_usec);
+
     for(i=0; i<nb; i++) {
         err = thread_join(th[i], NULL);
         assert(!err);
