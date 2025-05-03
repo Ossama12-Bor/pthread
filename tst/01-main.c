@@ -22,7 +22,7 @@ int main()
     assert(!err);
   }
 
-  printf("le main est %p\n", (void*) thread_self());
+//  printf("le main est %p\n", (void*) thread_self());
 
   return 0;
 }
