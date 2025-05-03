@@ -40,10 +40,11 @@ void handler(int sig) {
     // unsigned long us;
 
     // gettimeofday(&tv1, NULL);
-
+  desactivate_preemption();
     if (sig == SIGVTALRM && my_queue_size > 1) {
         thread_yield();
     }
+    activate_preemption();
     // gettimeofday(&tv2, NULL);
 	// us = (tv2.tv_sec-tv1.tv_sec)*1000000+(tv2.tv_usec-tv1.tv_usec);
 
@@ -83,11 +84,11 @@ void begin_preemption(void) {
 
 
 void utils(void *(*func)(void*), void *funcarg) {
+#ifdef	PREEMPTION
+  activate_preemption();
+#endif  
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
-	#ifdef	PREEMPTION
-	activate_preemption();
-	#endif
     thread_exit(current_thread->retval);
 }
 
