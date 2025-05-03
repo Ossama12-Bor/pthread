@@ -61,28 +61,13 @@ void begin_preemption(void) {
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = 100;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 2000;
+    timer.it_interval.tv_usec = 3000;
 
     setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
     preemption_initialized = 1;  
 }
 
-void sigterm_handler(int signum) {
-    // Gérer SIGTERM ici, par exemple en terminant les threads proprement
-    fprintf(stderr, "Signal SIGTERM reçu\n");
-
-    // Tu peux décider de sortir proprement ou de faire autre chose
-    exit(1);  // Quitter avec un code d'erreur ou effectuer des actions propres avant
-}
-
-void setup_sigterm_handler() {
-    struct sigaction sa;
-    sa.sa_handler = sigterm_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGTERM, &sa, NULL);  // Installer le gestionnaire pour SIGTERM
-}
 
 #endif
 
