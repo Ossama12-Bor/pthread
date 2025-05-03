@@ -38,7 +38,7 @@ static void * thfunc( void *arg )
 	    }
 	    values[me]++;
 	}
-//	fprintf(stderr, "%ld ", (intptr_t)arg );
+	fprintf(stderr, "%ld ", (intptr_t)arg );
     }
     fini = 1;
 
