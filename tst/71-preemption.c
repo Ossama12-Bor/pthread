@@ -20,7 +20,7 @@
  * - thread_join() sans récupération de la valeur de retour
  */
 #define NB_ITER     100
-#define ITER_LENGTH 100000
+#define ITER_LENGTH 1000000
 
 static int    fini  = 0;
 static double score = 0;
