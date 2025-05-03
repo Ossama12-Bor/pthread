@@ -69,7 +69,7 @@ $(BIN_DIR)/66-semaphore: tst/66-semaphore.c $(LIB_DIR)/libthread_preempt.so
 
 # Install the library and executables
 install: all
-	rm -rf $(OBJ) $(BIN_DIR) $(LIB_DIR)
+#	rm -rf $(OBJ) $(BIN_DIR) $(LIB_DIR)
 	@mkdir -p $(LIB_DIR) $(BIN_DIR)
 
 # Install pthread executables
