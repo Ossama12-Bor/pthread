@@ -25,12 +25,12 @@ static struct sigaction sa;
 static struct itimerval timer;
 static int preemption_initialized = 0;
 
-void preempt_disable(void) {
+void desactivate_preemption(void) {
     if (preemption_initialized)
         sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
 }
 
-void preempt_enable(void) {
+void activate_preemption(void) {
     if (preemption_initialized)
         sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL);
 }
@@ -52,7 +52,7 @@ void handler(int sig) {
 
 }
 
-void preempt_start(void) {
+void begin_preemption(void) {
     sa.sa_handler = handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
@@ -101,7 +101,7 @@ void utils(void *(*func)(void*), void *funcarg) {
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
 	#ifdef	PREEMPTION
-	preempt_enable();
+	activate_preemption();
 	#endif
     thread_exit(current_thread->retval);
 }
@@ -122,7 +122,7 @@ int initialize_queue(){
 	main_id_thread = (thread_t)main_thread;
 	main_thread->wait = NULL;
 	#ifdef PREEMPTION
-    preempt_start();
+    begin_preemption();
 	#endif
 
 	return 0;
@@ -148,7 +148,7 @@ void my_destructor() {
 
 int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 	#ifdef PREEMPTION
-	preempt_disable();  
+	desactivate_preemption();  
 	#endif
     struct my_thread *new_item = (struct my_thread *)malloc(sizeof(*new_item));
     if (new_item == NULL) {
@@ -215,12 +215,12 @@ int thread_yield(void) {
 		struct my_thread  * thread = TAILQ_FIRST(queue);
 		if(thread != current_thread) {
 	/*		#ifdef PREEMPTION
-    preempt_disable();
+    desactivate_preemption();
     #endif*/
 			swapcontext(&(current_thread->uc),&(thread->uc));
 		
 	/*	#ifdef PREEMPTION
-			preempt_enable();
+			activate_preemption();
 			#endif*/
 		}
 	}
@@ -233,7 +233,7 @@ int thread_yield(void) {
 
 int thread_join(thread_t thread, void **retval) {
 	#ifdef PREEMPTION
-	preempt_disable();
+	desactivate_preemption();
 	#endif 
 
 	int err;
@@ -252,7 +252,7 @@ int thread_join(thread_t thread, void **retval) {
 
 		}
 		#ifdef PREEMPTION
-		preempt_enable();
+		activate_preemption();
 		#endif
 		err = thread_yield();
 		if(err == 1){
@@ -274,7 +274,7 @@ int thread_join(thread_t thread, void **retval) {
 	}
 	free(thr);
 	#ifdef PREEMPTION
-	preempt_enable();
+	activate_preemption();
 	#endif 
 
 	return 0;
@@ -284,7 +284,7 @@ int thread_join(thread_t thread, void **retval) {
 
 void thread_exit(void *retval ) {
 	#ifdef PREEMPTION
-    preempt_disable();
+    desactivate_preemption();
 	#endif
     struct my_thread * current_thread = TAILQ_FIRST(queue);
 	struct my_thread * waiting = current_thread->wait;
@@ -304,7 +304,7 @@ void thread_exit(void *retval ) {
 	TAILQ_INSERT_HEAD(queue,current_thread,entries);
 	my_queue_size++;
 	#ifdef PREEMPTION
-    preempt_enable();
+    activate_preemption();
 	#endif
 	#ifndef PREEMPTION
     exit(0);
