@@ -84,9 +84,6 @@ void begin_preemption(void) {
 
 
 void utils(void *(*func)(void*), void *funcarg) {
-#ifdef	PREEMPTION
-  activate_preemption();
-#endif  
     struct my_thread *current_thread = TAILQ_FIRST(queue);
     current_thread->retval = func(funcarg);
     thread_exit(current_thread->retval);
@@ -174,6 +171,9 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 
 	my_queue_size++;
 	new_item->wait = NULL;
+#ifdef	PREEMPTION
+  activate_preemption();
+#endif  
 
     return 0;  // Success
 }
