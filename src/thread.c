@@ -62,7 +62,7 @@ void begin_preemption(void) {
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = 100;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 3000;
+    timer.it_interval.tv_usec = 10000;
 
     setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
