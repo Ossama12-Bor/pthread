@@ -41,7 +41,7 @@ void handler(int sig) {
 
     // gettimeofday(&tv1, NULL);
   desactivate_preemption();
-    if (sig == SIGVTALRM) {
+    if (sig == SIGVTALRM && my_queue_size > 1) {
         thread_yield();
     }
     activate_preemption();
@@ -64,7 +64,7 @@ void begin_preemption(void) {
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = 1000;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 3000;
+    timer.it_interval.tv_usec = 10000;
 
     setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
