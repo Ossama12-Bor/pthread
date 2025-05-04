@@ -26,13 +26,13 @@ static struct itimerval timer;
 static int preemption_initialized = 0;
 
 void desactivate_preemption(void) {
-//    if (preemption_initialized)
-//        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
+    if (preemption_initialized)
+        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
 }
 
 void activate_preemption(void) {
-//    if (preemption_initialized)
-//        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL); 
+    if (preemption_initialized)
+        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL); 
 }
 
 void handler(int sig) {
