@@ -26,13 +26,13 @@ static struct itimerval timer;
 static int preemption_initialized = 0;
 
 void desactivate_preemption(void) {
-    if (preemption_initialized)
-        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
+//    if (preemption_initialized)
+//        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
 }
 
 void activate_preemption(void) {
-    if (preemption_initialized)
-        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL); 
+//    if (preemption_initialized)
+//        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL); 
 }
 
 void handler(int sig) {
@@ -58,14 +58,14 @@ void begin_preemption(void) {
   sigemptyset(&sa.sa_mask);
   sigaddset(&sa.sa_mask, SIGVTALRM);
   sa.sa_flags = 0;
-  sigaction(SIGVTALRM, &sa, NULL);
+  sigaction(SIGALRM, &sa, NULL);
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 100;
+    timer.it_value.tv_usec = 10;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 10000;
+    timer.it_interval.tv_usec = 100;
 
-    setitimer(ITIMER_VIRTUAL, &timer, NULL);
+    setitimer(ITIMER_REAL, &timer, NULL);
 
     preemption_initialized = 1;  
 }
