@@ -26,13 +26,13 @@ static struct itimerval timer;
 static int preemption_initialized = 0;
 
 void desactivate_preemption(void) {
-//    if (preemption_initialized)
-//        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
+    if (preemption_initialized)
+        sigprocmask(SIG_BLOCK, &sa.sa_mask, NULL);
 }
 
 void activate_preemption(void) {
-//    if (preemption_initialized)
-//        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL); 
+    if (preemption_initialized)
+        sigprocmask(SIG_UNBLOCK, &sa.sa_mask, NULL); 
 }
 
 void handler(int sig) {
@@ -41,7 +41,7 @@ void handler(int sig) {
 
     // gettimeofday(&tv1, NULL);
   desactivate_preemption();
-    if (sig == SIGVTALRM && my_queue_size > 1) {
+    if (sig == SIGVTALRM) {
         thread_yield();
     }
     activate_preemption();
@@ -58,14 +58,15 @@ void begin_preemption(void) {
   sigemptyset(&sa.sa_mask);
   sigaddset(&sa.sa_mask, SIGVTALRM);
   sa.sa_flags = 0;
-  sigaction(SIGALRM, &sa, NULL);
+  sigaction(SIGVTALRM, &sa, NULL);
+  desactivate_preemption();
 
     timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = 10;
+    timer.it_value.tv_usec = 1000;
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 100;
+    timer.it_interval.tv_usec = 1000;
 
-    setitimer(ITIMER_REAL, &timer, NULL);
+    setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
     preemption_initialized = 1;  
 }
@@ -176,6 +177,9 @@ int thread_create(thread_t *newthread, void *(*func)(void *), void *funcarg) {
 
 	my_queue_size++;
 	new_item->wait = NULL;
+#ifdef	PREEMPTION
+  activate_preemption();
+#endif  
 
     return 0;  // Success
 }
