@@ -20,7 +20,7 @@
  * - thread_join() sans récupération de la valeur de retour
  */
 #define NB_ITER     100
-#define ITER_LENGTH 10000
+#define ITER_LENGTH 1000000
 
 static int    fini  = 0;
 static double score = 0;
@@ -96,9 +96,9 @@ int main(int argc, char *argv[])
     us = (tv2.tv_sec-tv1.tv_sec)*1000000+(tv2.tv_usec-tv1.tv_usec);
 
     score = score / ( (double)(nb+1) * NB_ITER * ITER_LENGTH );
-//    printf("\nscore: %lf\n", score );
+    printf("\nscore: %lf\n", score );
 
-//    printf("Programme exécuté en %ld us\n", us);
+    printf("Programme exécuté en %ld us\n", us);
 
     free(th);
     free(values);
