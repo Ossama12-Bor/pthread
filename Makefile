@@ -28,7 +28,7 @@ TEST_TARGETS_PTHREAD = $(patsubst tst/%, $(BIN_DIR)/p%, $(TESTS))
 .PHONY: all clean install pthread
 
 # Default target: compile the library and all tests
-all: $(LIB_SO) $(TEST_TARGETS) $(BIN_DIR)/71-preemption #$(BIN_DIR)/66-semaphore
+all: $(LIB_SO) $(TEST_TARGETS) $(BIN_DIR)/71-preemption $(BIN_DIR)/66-semaphore
 
 # Build shared library
 $(LIB_SO): $(OBJ)
