@@ -122,6 +122,7 @@ int main() {
 
   thread_sem_destroy( &filled );
   thread_sem_destroy( &empty );
-
+    thread_mutex_destroy(&sum_lock);
+    thread_mutex_destroy(&read_lock);
   return EXIT_SUCCESS;
 }
