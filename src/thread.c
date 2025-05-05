@@ -354,43 +354,65 @@ int thread_mutex_unlock(thread_mutex_t *mutex) {
 	return 0;
 }
 
-int thread_sem_init(thread_sem_t *sem,int pshared __attribute__((unused)),int value){
-	if (value < 0 || sem == NULL) {
-		return -1;
-	}
-
-	sem->dummy = value;
-	return 0;
+int thread_sem_init(thread_sem_t *sem, int pshared, int value)
+{
+    (void)pshared;                              
+    sem->value = value;
+    sem->queue = malloc(sizeof(struct mutex_queue));
+    if (!sem->queue) {
+        perror("thread_sem_init");
+        return 1;
+    }
+    TAILQ_INIT(sem->queue);
+    return 0;
 }
 
-int thread_sem_destroy(thread_sem_t *sem){
-	sem->dummy = -1;
-	return 0;
+int thread_sem_destroy(thread_sem_t *sem)
+{
+    free(sem->queue);
+    return 0;
 }
 
-int thread_sem_wait(thread_sem_t *sem){
-	while(sem->dummy <= 0){
-		thread_yield();
-	}
-	sem->dummy = sem->dummy -1;
-	return 0;
+
+int thread_sem_wait(thread_sem_t *sem)
+{
+    struct my_thread *current = TAILQ_FIRST(queue);
+    sem->value--;
+    if (sem->value < 0) {
+        struct mutex_thread *node = malloc(sizeof(struct mutex_thread));
+        node->thread = current;
+        TAILQ_INSERT_TAIL(sem->queue, node, entries);
+
+        current->state = IS_WAITING;         
+        thread_yield();                      
+    }
+    return 0;
 }
 
-int thread_sem_post(thread_sem_t *sem){
-	sem->dummy = sem->dummy + 1;
-	return 0;
+int thread_sem_trywait(thread_sem_t *sem)
+{
+    if (sem->value <= 0)
+        return EAGAIN;                        
+
+    sem->value--;
+    return 0;
 }
 
-int thread_sem_trywait(thread_sem_t *sem){
-	if(sem->dummy <= 0){
-		printf("sem->dummy <= 0\n");
-		thread_yield();
-		return -1;
-	}
+int thread_sem_post(thread_sem_t *sem)
+{
+    sem->value++;
 
-	sem->dummy -= 1;
-	return 0;
+    if (sem->value <= 0) {
+        struct mutex_thread *first = TAILQ_FIRST(sem->queue);
+        if (first) {
+            TAILQ_REMOVE(sem->queue, first, entries);
+            first->thread->state = IS_READY;
+            TAILQ_INSERT_AFTER(queue,TAILQ_FIRST(queue),first->thread,entries);
+            my_queue_size++;
+            free(first);
+        }
+    }
+    return 0;
 }
 
 #endif /* USE_PTHREAD */
-
