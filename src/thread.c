@@ -217,9 +217,9 @@ int thread_yield(void) {
     #endif*/
 			swapcontext(&(current_thread->uc),&(thread->uc));
 		
-	/*	#ifdef PREEMPTION
-			activate_preemption();
-			#endif*/
+	#ifdef PREEMPTION
+		activate_preemption();
+	#endif
 		}
 	}
 	else if (my_queue_size == 1 && current_thread->state == IS_WAITING){
@@ -304,9 +304,7 @@ void thread_exit(void *retval ) {
 	#ifdef PREEMPTION
     activate_preemption();
 	#endif
-	#ifndef PREEMPTION
     exit(0);
-	#endif
 }
 
 int thread_mutex_init(thread_mutex_t *mutex) {
