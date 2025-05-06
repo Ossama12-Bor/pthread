@@ -9,6 +9,11 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/signal.h>
+#include <stdint.h>
+
+#define MAX_SIGNALS 2
+#define THREAD_SIG_TERM 0   // Terminate thread signal
+#define THREAD_SIG_USR1 1   // User-defined signal
 #ifndef USE_PTHREAD
 
 #define THREAD_STACK_SIZE 64*1024
@@ -414,5 +419,51 @@ int thread_sem_post(thread_sem_t *sem)
     }
     return 0;
 }
+
+// ==========================
+// SIGNAL HANDLING SECTION
+// ==========================
+// ... (functions above)
+// Sends a signal to the specified thread
+int thread_kill(thread_t tid, int signal) {
+    if (signal < 0 || signal >= MAX_SIGNALS || tid == NULL)
+        return -1;
+
+    struct my_thread *t = (struct my_thread *)tid;
+    t->pending_signals |= (1U << signal);
+    return 0;
+}
+
+int thread_signal(struct my_thread *current_thread, int signal, void (*handler)(int)) {
+    if (signal < 0 || signal >= MAX_SIGNALS || current_thread == NULL)
+        return -1;
+
+    current_thread->handlers[signal] = handler;
+    return 0;
+}
+
+
+// Deliver all pending signals to the thread (typically called in scheduler)
+void deliver_pending_signals(struct my_thread *tcb) {
+    for (int sig = 0; sig < MAX_SIGNALS; ++sig) {
+        uint32_t mask = (1U << sig);
+
+        if ((tcb->pending_signals & mask) && !(tcb->blocked_signals & mask)) {
+            tcb->pending_signals &= ~mask;  // Clear pending signal
+
+            if (tcb->handlers[sig]) {
+                tcb->handlers[sig](sig);    // Call handler
+            } else {
+                if (sig == THREAD_SIG_TERM) {
+                    printf("[thread %p] got THREAD_SIG_TERM\n", (void *)tcb);
+                    thread_exit(NULL);
+                } else {
+                    printf("[thread %p] unhandled signal %d\n", (void *)tcb, sig);
+                }
+            }
+        }
+    }
+}
+
 
 #endif /* USE_PTHREAD */

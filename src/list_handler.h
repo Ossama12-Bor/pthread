@@ -3,6 +3,9 @@
 #include "queue.h"
 #include <ucontext.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+#define MAX_SIGNALS 2
 typedef void * thread_t;
 extern thread_t  main_id_thread;
 enum states{
@@ -19,6 +22,9 @@ struct my_thread {
     thread_t wait ;
     TAILQ_ENTRY(my_thread) entries;
     void * retval;
+    uint32_t pending_signals;            // Bitmask of pending signals
+    uint32_t blocked_signals;            // Bitmask of blocked signals
+    void (*handlers[MAX_SIGNALS])(int);  // Array of signal handlers
 };
 
 struct mutex_thread {
