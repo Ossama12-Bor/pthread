@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/signal.h>
 #include <stdint.h>
+#include <signal.h>
 
 #define MAX_SIGNALS 2
 #define THREAD_SIG_TERM 0   // Terminate thread signal
@@ -23,7 +24,15 @@ struct my_queue  * queue = NULL;
 
 int my_queue_size ;
 
+stack_t alt_stack;
 
+#ifndef PREEMPTION
+void signal_handler(int sig) {
+    if (sig == SIGSEGV) {
+        pthread_exit(NULL);
+    }
+}
+#endif
 
 #ifdef PREEMPTION
 static struct sigaction sa;
@@ -81,13 +90,19 @@ void begin_preemption(void) {
 
 
 
-//int deadlock;
-//thread_mutex_t locker;
-
-// Function initializer to initialize empty queue
-
-
-// Fonction pour mettre le main dans la queue
+void setup_signal_stack() {
+    alt_stack.ss_sp = malloc(SIGSTKSZ);  // Allouer un espace mémoire pour la pile alternative
+    if (alt_stack.ss_sp == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    alt_stack.ss_size = SIGSTKSZ;
+	alt_stack.ss_flags = 0;
+    if (sigaltstack(&alt_stack, NULL) == -1) {
+        perror("sigaltstack");
+        exit(EXIT_FAILURE);
+    }
+}
 
 
 void utils(void *(*func)(void*), void *funcarg) {
@@ -128,6 +143,7 @@ int initialize_queue(){
 __attribute__((constructor))
 void my_constructor() {
     initialize_queue();
+	setup_signal_stack();
 }
 
 
@@ -237,7 +253,13 @@ int thread_join(thread_t thread, void **retval) {
 	int err;
 	struct my_thread * current  = TAILQ_FIRST(queue);
 	struct my_thread * thr = thread;
-	assert(thr != NULL);
+	if(thr == NULL){
+		perror("error: thread joined by two threads");
+		return ESRCH;
+	}
+	if(thr->wait != NULL)
+		return EINVAL;
+		
 	/*if(thr->wait == current){
 		return EDEADLK;
 	}*/

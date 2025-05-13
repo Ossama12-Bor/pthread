@@ -6,22 +6,25 @@ import time
 import sys
 
 def time_of_executable(arg):
-    start = time.time()
-    result = subprocess.run(arg, capture_output=True, text=True)
-    print(result)
-    end = time.time()
-    return end - start
+	start = time.time()
+	result = subprocess.run(arg, capture_output=True, text=True)
+	print(result)
+	end = time.time()
+	return end - start
 
 def table_of_times(chemin):
-    if not os.path.exists(chemin):
-        print("Erreur d'exécution")
-        return {}
+	if not os.path.exists(chemin):
+		print("Erreur d'exécution")
+		return {}
 
-    times = {}
-    for i in range(1000):
-        arg = [chemin, str(i)]
-        times[i] = time_of_executable(arg)
-    return times
+	times = {}
+	for i in range(20):
+		total_time = 0
+		for j in range(50):
+			arg = [chemin, str(i*50)]
+			times[i*50] = time_of_executable(arg)
+		times[i*50] = times[i*50]/50
+	return times
 
 name = sys.argv[1]  
 
